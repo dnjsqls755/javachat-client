@@ -1,6 +1,6 @@
 package view.frame;
 
-import app.Application;
+import app.ClientApplication;
 import dto.request.CreateChatRoomRequest;
 
 import javax.swing.*;
@@ -53,13 +53,13 @@ public class CreateChatFrame extends JFrame {
                 return;
             }
 
-            Application.sender.sendMessage(new CreateChatRoomRequest(chatRoomName, Application.me.getId()));
+            ClientApplication.sender.sendMessage(new CreateChatRoomRequest(chatRoomName, ClientApplication.me.getId()));
             frame.dispose();
 
             ChatFrame chatFrame = new ChatFrame(chatRoomName);
 
-            Application.chatPanelMap.put(chatRoomName, chatFrame.chatPanel); // 채팅방 화면 관리
-            Application.chatRoomUserListPanelMap.put(chatRoomName, chatFrame.chatRoomUserListPanel);
+            ClientApplication.chatPanelMap.put(chatRoomName, chatFrame.chatPanel); // 채팅방 화면 관리
+            ClientApplication.chatRoomUserListPanelMap.put(chatRoomName, chatFrame.chatRoomUserListPanel);
         }
     }
 

@@ -1,6 +1,6 @@
 package view.frame;
 
-import app.Application;
+import app.ClientApplication;
 import network.MessageSender;
 import view.panel.ChatPanel;
 import view.panel.ChatRoomListPanel;
@@ -32,10 +32,10 @@ public class LobbyFrame extends JFrame implements WindowListener {
         setLayout(null);
         setSize(830, 550);
 
-        chatPanel = new ChatPanel(this, Application.LOBBY_CHAT_NAME);
+        chatPanel = new ChatPanel(this, ClientApplication.LOBBY_CHAT_NAME);
         chatRoomUserListPanel = new ChatRoomUserListPanel(this);
         chatRoomListPanel = new ChatRoomListPanel(this);
-        menuPanel = new MenuPanel(this, Application.LOBBY_CHAT_NAME);
+        menuPanel = new MenuPanel(this, ClientApplication.LOBBY_CHAT_NAME);
         menuPanel.setCreateChatBtnVisible(true);
 
         this.addWindowListener(this);

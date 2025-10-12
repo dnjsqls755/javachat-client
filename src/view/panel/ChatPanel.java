@@ -1,6 +1,6 @@
 package view.panel;
 
-import app.Application;
+import app.ClientApplication;
 import dto.request.MessageRequest;
 import dto.type.MessageType;
 
@@ -64,8 +64,8 @@ public class ChatPanel extends JPanel implements ActionListener {
         String message = msgTextF.getText();
 
         if (!message.isEmpty()) {
-            Application.sender
-                    .sendMessage(new MessageRequest(MessageType.CHAT, chatRoomName, Application.me.getName(), message));
+            ClientApplication.sender
+                    .sendMessage(new MessageRequest(MessageType.CHAT, chatRoomName, ClientApplication.me.getName(), message));
             chatTextA.append("내가 보낸 메시지: " + message + "\n");
         }
         msgTextF.setText("");

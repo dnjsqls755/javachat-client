@@ -1,6 +1,6 @@
 package network;
 
-import app.Application;
+import app.ClientApplication;
 import domain.ChatRoom;
 import dto.response.*;
 import dto.type.DtoType;
@@ -9,6 +9,7 @@ import view.frame.LobbyFrame;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class MessageReceiver extends Thread {
@@ -30,7 +31,7 @@ public class MessageReceiver extends Thread {
                 if (str == null) {
                     try {
                         socket.close();
-                        System.out.println(Application.me.getName() + "'s socket is closed.");
+                        System.out.println(ClientApplication.me.getName() + "'s socket is closed.");
                     } catch(Exception e) {
                         e.printStackTrace();
                     }
@@ -40,10 +41,15 @@ public class MessageReceiver extends Thread {
                 }
                 System.out.println(str);
                 String[] token = str.split(":");
-                DtoType type = DtoType.valueOf(token[0]);
-                String message = token[1];
 
-                processReceivedMessage(type, message);
+                try {
+                    DtoType type = DtoType.valueOf(token[0]);
+                    String message = token.length > 1 ? token[1] : "";
+                    processReceivedMessage(type, message);
+                } catch (IllegalArgumentException e) {
+                    System.out.println("정의되지 않은 DtoType: " + token[0]);
+                    // 예외 처리: 무시하거나 사용자에게 알림
+                }
 
                 Thread.sleep(300);
             }
@@ -66,16 +72,16 @@ public class MessageReceiver extends Thread {
         switch (type) {
             case LOGIN:
                 InitResponse initRes = new InitResponse(message);
-                Application.chatRooms = initRes.getChatRooms();
-                Application.users = initRes.getUsers();
+                ClientApplication.chatRooms = initRes.getChatRooms();
+                ClientApplication.users = initRes.getUsers();
 
-                LobbyFrame.chatRoomUserListPanel.paintChatUsers(Application.users); // 전체 리스트
+                LobbyFrame.chatRoomUserListPanel.paintChatUsers(ClientApplication.users);
                 LobbyFrame.chatRoomListPanel.paintChatRoomList();
                 break;
 
             case MESSAGE:
                 MessageResponse messageRes = new MessageResponse(message);
-                Application.chatPanelMap.get(messageRes.getChatRoomName()).addMessage(messageRes.getMessageType(), messageRes.getUserName(), messageRes.getMessage());
+                ClientApplication.chatPanelMap.get(messageRes.getChatRoomName()).addMessage(messageRes.getMessageType(), messageRes.getUserName(), messageRes.getMessage());
                 break;
 
             case CREATE_CHAT:
@@ -83,19 +89,19 @@ public class MessageReceiver extends Thread {
                 String chatRoomName = createChatRoomResponse.getName();
 
                 ChatRoom newChatRoom = new ChatRoom(chatRoomName);
-                Application.chatRooms.add(newChatRoom);
+                ClientApplication.chatRooms.add(newChatRoom);
 
-                LobbyFrame.chatRoomListPanel.addChatRoomLabel(chatRoomName); // 새로 생성된 채팅방을 채팅방 목록에 추가
+                LobbyFrame.chatRoomListPanel.addChatRoomLabel(chatRoomName);
                 break;
 
             case USER_LIST:
                 UserListResponse userListRes = new UserListResponse(message);
-                Application.chatRoomUserListPanelMap.get(userListRes.getChatRoomName()).paintChatUsers(userListRes.getUsers()); // 갱신된 채팅방 사용자 리스트 설정
+                ClientApplication.chatRoomUserListPanelMap.get(userListRes.getChatRoomName()).paintChatUsers(userListRes.getUsers());
                 break;
 
             case CHAT_ROOM_LIST:
                 ChatRoomListResponse chatRoomListRes = new ChatRoomListResponse(message);
-                Application.chatRooms = chatRoomListRes.getChatRooms();
+                ClientApplication.chatRooms = chatRoomListRes.getChatRooms();
                 LobbyFrame.chatRoomListPanel.paintChatRoomList();
                 break;
         }

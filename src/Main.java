@@ -1,9 +1,9 @@
-import app.Application;
+import app.ClientApplication;
 
 public class Main {
 
     public static void main(String[] args) {
-        new Application();
+        new ClientApplication();
     }
 
 }

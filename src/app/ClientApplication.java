@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class Application {
+public class ClientApplication {
 
     public static Socket socket;
 
@@ -36,7 +36,7 @@ public class Application {
 
     public static final String LOBBY_CHAT_NAME = "Lobby"; // 로비 채팅방 이름
 
-    public Application() {
+    public ClientApplication() {
         try {
             // 애플리케이션 시작 시 소켓 연결
             socket = new Socket("192.168.0.24", 9000);

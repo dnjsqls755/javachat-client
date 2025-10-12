@@ -1,6 +1,6 @@
 package view.frame;
 
-import app.Application;
+import app.ClientApplication;
 import domain.User;
 import dto.request.LoginRequest;
 import network.MessageSender;
@@ -69,10 +69,10 @@ public class LoginFrame extends JFrame implements ActionListener {
             }
 
             User user = new User(id, pw);
-            Application.me = user;
-            Application.users.add(user);
+            ClientApplication.me = user;
+            ClientApplication.users.add(user);
 
-            Application.sender.sendMessage(new LoginRequest(id, pw));
+            ClientApplication.sender.sendMessage(new LoginRequest(id, pw));
 
             this.dispose();
             lobbyFrame.setVisible(true);
