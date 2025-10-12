@@ -17,7 +17,8 @@ public class LoginFrame extends JFrame implements ActionListener {
     JLabel pwLabel = new JLabel("비밀번호");
 
     JTextField idTextF = new JTextField(20);
-    JTextField pwTextF = new JTextField(20);
+    JPasswordField pwTextF = new JPasswordField(20);
+
 
     JButton loginBtn = new JButton("로그인");
     JButton joinBtn = new JButton("회원가입"); // 회원가입 버튼 추가
@@ -53,7 +54,8 @@ public class LoginFrame extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == loginBtn) {
             String id = idTextF.getText();
-            String pw = pwTextF.getText();
+            String pw = new String(pwTextF.getPassword());
+
 
             if (id.trim().isEmpty()) {
                 JOptionPane.showMessageDialog(null,

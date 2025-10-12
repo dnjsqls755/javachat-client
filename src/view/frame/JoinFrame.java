@@ -3,9 +3,12 @@ package view.frame;
 import net.sourceforge.jdatepicker.impl.JDatePanelImpl;
 import net.sourceforge.jdatepicker.impl.JDatePickerImpl;
 import net.sourceforge.jdatepicker.impl.UtilDateModel;
-
-
+import java.awt.image.BufferedImage;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.PlainDocument;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
@@ -16,17 +19,19 @@ import java.util.Properties;
 
 public class JoinFrame extends JFrame implements ActionListener {
 
+    // ===== UI 컴포넌트 =====
     JTextField idField = new JTextField();
     JButton idCheckBtn = new JButton("중복 확인");
 
     JPasswordField pwField = new JPasswordField();
     JPasswordField pwConfirmField = new JPasswordField();
-    JLabel pwStrengthLabel = new JLabel("0%");
+    JProgressBar pwStrengthBar = new JProgressBar(0, 100);
+    JLabel pwStrengthLabel = new JLabel("비밀번호 강도");
 
     JTextField nicknameField = new JTextField();
     JButton nicknameCheckBtn = new JButton("중복 확인");
 
-    JTextField emailField = new JTextField();
+    JTextField emailLocalField = new JTextField();
     JComboBox<String> emailDomainCombo = new JComboBox<>(new String[]{"직접입력", "naver.com", "gmail.com", "daum.net"});
 
     JTextField nameField = new JTextField();
@@ -35,7 +40,7 @@ public class JoinFrame extends JFrame implements ActionListener {
     JDatePickerImpl datePicker;
 
     JComboBox<String> phonePrefixCombo = new JComboBox<>(new String[]{"010", "011", "016"});
-    JTextField phoneField = new JTextField();
+    JTextField phoneField = new JTextField(); // 뒤 8자리 입력
 
     JTextField postalField = new JTextField();
     JButton postalBtn = new JButton("우편번호");
@@ -43,7 +48,7 @@ public class JoinFrame extends JFrame implements ActionListener {
     JTextField addressField = new JTextField();
     JTextField detailAddressField = new JTextField();
 
-    JLabel profileLabel = new JLabel("사진 없음");
+    JLabel profilePreview = new JLabel("사진 없음", SwingConstants.CENTER);
     JButton uploadBtn = new JButton("사진 업로드");
 
     JButton joinBtn = new JButton("회원가입");
@@ -51,100 +56,230 @@ public class JoinFrame extends JFrame implements ActionListener {
 
     File profileImageFile = null;
 
+    // ===== 스타일(폰트/여백/색상) =====
+    private static final Font FONT_LABEL = new Font("SansSerif", Font.PLAIN, 14);
+    private static final Font FONT_INPUT = new Font("SansSerif", Font.PLAIN, 14);
+    private static final Insets ROW_INSETS = new Insets(4, 4, 4, 4);
+    private static final int FIELD_COLS = 18; // 텍스트필드 폭 균등화
+
     public JoinFrame() {
         setTitle("회원가입");
-        setSize(600, 800);
-        setLayout(null);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setSize(720, 900);
+        setLocationRelativeTo(null);
 
-        int y = 20, h = 30, gap = 10;
+        // 메인 패널 (GridBagLayout)
+        JPanel main = new JPanel(new GridBagLayout());
+        main.setBorder(new EmptyBorder(16, 16, 16, 16));
+        add(main);
 
-        addRow("아이디", idField, idCheckBtn, y); y += h + gap;
-        addRow("비밀번호", pwField, null, y); y += h + gap;
-        addRow("비밀번호 확인", pwConfirmField, pwStrengthLabel, y); y += h + gap;
-        addRow("닉네임", nicknameField, nicknameCheckBtn, y); y += h + gap;
+        GridBagConstraints gc = new GridBagConstraints();
+        gc.fill = GridBagConstraints.HORIZONTAL;
+        gc.insets = ROW_INSETS;
+        gc.weightx = 0;
 
-        addLabel("이메일", y);
-        emailField.setBounds(150, y, 150, h); add(emailField);
-        JLabel atLabel = new JLabel("@"); atLabel.setBounds(310, y, 20, h); add(atLabel);
-        emailDomainCombo.setBounds(340, y, 100, h); add(emailDomainCombo);
-        y += h + gap;
+        // 헤더
+        JLabel header = new JLabel("회원가입");
+        header.setFont(new Font("SansSerif", Font.BOLD, 20));
+        gc.gridx = 0; gc.gridy = 0; gc.gridwidth = 3; gc.weightx = 1;
+        main.add(header, gc);
 
-        addRow("이름", nameField, null, y); y += h + gap;
+        JSeparator sep = new JSeparator();
+        gc.gridy = 1;
+        main.add(sep, gc);
 
-        addLabel("성별", y);
-        genderCombo.setBounds(150, y, 150, h); add(genderCombo);
-        y += h + gap;
+        // 행 번호 시작
+        int row = 2;
 
-        // 생년월일 - JDatePicker 사용
-        addLabel("생년월일", y);
+        // ===== 각 행 추가 =====
+        addRow(main, gc, row++, "아이디", idField, idCheckBtn);
+
+        addRow(main, gc, row++, "비밀번호", pwField, null);
+
+        // 비밀번호 확인 + 강도
+        JPanel pwConfirmPanel = new JPanel(new BorderLayout(8, 0));
+        pwConfirmPanel.add(pwConfirmField, BorderLayout.CENTER);
+
+        JPanel strengthPanel = new JPanel(new BorderLayout(6, 0));
+        pwStrengthBar.setStringPainted(true);
+        strengthPanel.add(pwStrengthLabel, BorderLayout.WEST);
+        strengthPanel.add(pwStrengthBar, BorderLayout.CENTER);
+
+        gc.gridx = 0; gc.gridy = row; gc.gridwidth = 1; gc.weightx = 0;
+        main.add(makeLabel("비밀번호 확인"), gc);
+        gc.gridx = 1; gc.gridwidth = 1; gc.weightx = 1;
+        pwConfirmField.setFont(FONT_INPUT);
+        pwConfirmPanel.setPreferredSize(new Dimension(0, pwConfirmField.getPreferredSize().height));
+        main.add(pwConfirmPanel, gc);
+        gc.gridx = 2; gc.gridwidth = 1; gc.weightx = 0.7;
+        main.add(strengthPanel, gc);
+        row++;
+
+        addRow(main, gc, row++, "닉네임", nicknameField, nicknameCheckBtn);
+
+        // 이메일 (로컬 + @ + 도메인 콤보)
+        JPanel emailPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints egc = new GridBagConstraints();
+        egc.insets = new Insets(0, 0, 0, 6);
+        egc.fill = GridBagConstraints.HORIZONTAL;
+
+        emailLocalField.setColumns(FIELD_COLS);
+        emailLocalField.setFont(FONT_INPUT);
+        egc.gridx = 0; egc.weightx = 1; emailPanel.add(emailLocalField, egc);
+
+        JLabel atLabel = new JLabel("@");
+        atLabel.setFont(FONT_LABEL);
+        egc.gridx = 1; egc.weightx = 0; emailPanel.add(atLabel, egc);
+
+        emailDomainCombo.setFont(FONT_INPUT);
+        egc.gridx = 2; egc.weightx = 0.4; emailPanel.add(emailDomainCombo, egc);
+
+        addRow(main, gc, row++, "이메일", emailPanel, null);
+
+        addRow(main, gc, row++, "이름", nameField, null);
+
+        addRow(main, gc, row++, "성별", genderCombo, null);
+
+        // 생년월일 (JDatePicker, 한국어 라벨)
         UtilDateModel model = new UtilDateModel();
-//        Properties p = new Properties();
-//        p.put("text.today", "오늘");
-//        p.put("text.month", "월");
-//        p.put("text.year", "년");
+       // Properties p = new Properties();
+        //p.put("text.today", "오늘");
+       // p.put("text.month", "월");
+       // p.put("text.year", "년");
         JDatePanelImpl datePanel = new JDatePanelImpl(model);
         datePicker = new JDatePickerImpl(datePanel, new DateLabelFormatter());
-        datePicker.setBounds(150, y, 260, h);
-        add(datePicker);
-        y += h + gap;
 
-        addLabel("전화번호", y);
-        phonePrefixCombo.setBounds(150, y, 80, h); add(phonePrefixCombo);
-        phoneField.setBounds(240, y, 170, h); add(phoneField);
-        y += h + gap;
+        addRow(main, gc, row++, "생년월일", datePicker, null);
 
-        addLabel("우편번호", y);
-        postalField.setBounds(150, y, 150, h); add(postalField);
-        postalBtn.setBounds(310, y, 100, h); add(postalBtn);
-        y += h + gap;
+        // 전화번호 (prefix + 뒤 8자리)
+        JPanel phonePanel = new JPanel(new GridBagLayout());
+        GridBagConstraints pgc = new GridBagConstraints();
+        pgc.insets = new Insets(0, 0, 0, 6);
+        pgc.fill = GridBagConstraints.HORIZONTAL;
 
-        addRow("주소", addressField, null, y); y += h + gap;
-        addRow("상세주소", detailAddressField, null, y); y += h + gap;
+        phonePrefixCombo.setFont(FONT_INPUT);
+        pgc.gridx = 0; pgc.weightx = 0; phonePanel.add(phonePrefixCombo, pgc);
 
-        addLabel("프로필 사진", y);
-        profileLabel.setBounds(150, y, 150, h); add(profileLabel);
-        uploadBtn.setBounds(310, y, 100, h); add(uploadBtn);
-        y += h + gap + 10;
+        JLabel dash = new JLabel("-");
+        dash.setFont(FONT_LABEL);
+        pgc.gridx = 1; phonePanel.add(dash, pgc);
 
-        joinBtn.setBounds(150, y, 120, 40); add(joinBtn);
-        backBtn.setBounds(280, y, 120, 40); add(backBtn);
+        phoneField.setColumns(10);
+        phoneField.setFont(FONT_INPUT);
+        phoneField.setDocument(new NumericDocument(8)); // 숫자 8자리 제한
+        pgc.gridx = 2; pgc.weightx = 1; phonePanel.add(phoneField, pgc);
 
-        // 이벤트 등록
+        addRow(main, gc, row++, "전화번호", phonePanel, null);
+
+        // 우편번호 + 버튼
+        addRow(main, gc, row++, "우편번호", postalField, postalBtn);
+
+        addRow(main, gc, row++, "주소", addressField, null);
+        addRow(main, gc, row++, "상세주소", detailAddressField, null);
+
+        // 프로필 사진 (썸네일 + 업로드)
+        profilePreview.setPreferredSize(new Dimension(120, 120));
+        profilePreview.setBorder(BorderFactory.createLineBorder(Color.LIGHT_GRAY));
+        addRow(main, gc, row++, "프로필 사진", profilePreview, uploadBtn);
+
+        // 하단 버튼
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
+        btnPanel.add(joinBtn);
+        btnPanel.add(backBtn);
+
+        gc.gridx = 0; gc.gridy = row; gc.gridwidth = 3; gc.weightx = 1;
+        main.add(btnPanel, gc);
+
+        // ===== 폰트/공통속성 =====
+        for (JComponent c : new JComponent[]{
+                idField, pwField, pwConfirmField, nicknameField, emailLocalField,
+                nameField, phoneField, postalField, addressField, detailAddressField
+        }) {
+            c.setFont(FONT_INPUT);
+            if (c instanceof JTextField tf) tf.setColumns(FIELD_COLS);
+        }
+
+        // ===== 이벤트 등록 =====
         uploadBtn.addActionListener(this);
         postalBtn.addActionListener(this);
         joinBtn.addActionListener(this);
         backBtn.addActionListener(this);
 
+        idCheckBtn.addActionListener(this);
+        nicknameCheckBtn.addActionListener(this);
+
+        // 이메일 도메인 선택 로직
+        emailDomainCombo.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String sel = (String) emailDomainCombo.getSelectedItem();
+                if ("직접입력".equals(sel)) {
+                    // 도메인은 사용자가 직접 타이핑을 하도록 유도 (로컬 필드만 사용)
+                    emailLocalField.requestFocus();
+                }
+            }
+        });
+
+        // 비밀번호 강도 업데이트
+        KeyAdapter pwListener = new KeyAdapter() {
+            @Override
+            public void keyReleased(KeyEvent e) {
+                updatePasswordStrength();
+            }
+        };
+        pwField.addKeyListener(pwListener);
+        pwConfirmField.addKeyListener(pwListener);
+
         setVisible(true);
     }
 
-    private void addLabel(String text, int y) {
-        JLabel label = new JLabel(text);
-        label.setBounds(50, y, 100, 30);
-        add(label);
-    }
+    // ===== 레이아웃 헬퍼: 라벨/필드/오른쪽 컴포넌트 =====
+    private void addRow(JPanel main, GridBagConstraints gc, int row,
+                        String labelText, JComponent center, JComponent right) {
+        JLabel label = makeLabel(labelText);
 
-    private void addRow(String labelText, JComponent field, JComponent right, int y) {
-        addLabel(labelText, y);
-        field.setBounds(150, y, 150, 30); add(field);
+        gc.gridx = 0; gc.gridy = row; gc.gridwidth = 1; gc.weightx = 0;
+        main.add(label, gc);
+
+        gc.gridx = 1; gc.gridwidth = 1; gc.weightx = 1;
+        main.add(center, gc);
+
         if (right != null) {
-            right.setBounds(310, y, 100, 30);
-            add(right);
+            gc.gridx = 2; gc.gridwidth = 1; gc.weightx = 0.5;
+            main.add(right, gc);
+        } else {
+            // 빈 공간 확보 (정렬 유지)
+            JPanel spacer = new JPanel();
+            spacer.setOpaque(false);
+            gc.gridx = 2; gc.gridwidth = 1; gc.weightx = 0.3;
+            main.add(spacer, gc);
         }
     }
 
+    private JLabel makeLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(FONT_LABEL);
+        return label;
+    }
+
+    // ===== 이벤트 처리 =====
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == uploadBtn) {
+        Object src = e.getSource();
+        if (src == uploadBtn) {
             JFileChooser chooser = new JFileChooser();
             int result = chooser.showOpenDialog(this);
             if (result == JFileChooser.APPROVE_OPTION) {
                 profileImageFile = chooser.getSelectedFile();
-                profileLabel.setText(profileImageFile.getName());
+                ImageIcon icon = new ImageIcon(profileImageFile.getAbsolutePath());
+                profilePreview.setText(null);
+                profilePreview.setIcon(new ImageIcon(scaleImage(icon.getImage(), 120, 120)));
             }
-        } else if (e.getSource() == postalBtn) {
+        } else if (src == postalBtn) {
             JOptionPane.showMessageDialog(this, "우편번호 검색 기능은 구현 필요");
-        } else if (e.getSource() == joinBtn) {
+        } else if (src == joinBtn) {
+            // 입력 검증 (간단 예시)
+            if (!validateForm()) return;
+
             // 생년월일 가져오기
             Calendar selectedDate = (Calendar) datePicker.getModel().getValue();
             String birthDate = "";
@@ -153,29 +288,154 @@ public class JoinFrame extends JFrame implements ActionListener {
                 birthDate = sdf.format(selectedDate.getTime());
             }
 
-            JOptionPane.showMessageDialog(this, "회원가입 요청 완료\n생년월일: " + birthDate);
-        } else if (e.getSource() == backBtn) {
-            this.dispose(); // 창 닫기
+            // 이메일 조합 (도메인 콤보)
+            String domain = (String) emailDomainCombo.getSelectedItem();
+            String email = emailLocalField.getText().trim()
+                    + "@"
+                    + ("직접입력".equals(domain) ? "" : domain);
+
+            JOptionPane.showMessageDialog(this,
+                    "회원가입 요청 완료\n"
+                            + "아이디: " + idField.getText() + "\n"
+                            + "이메일: " + email + "\n"
+                            + "생년월일: " + birthDate);
+        } else if (src == backBtn) {
+            this.dispose();
+        } else if (src == idCheckBtn) {
+            // TODO: 서버로 아이디 중복 확인 요청
+            JOptionPane.showMessageDialog(this, "아이디 중복 확인 기능은 구현 필요");
+        } else if (src == nicknameCheckBtn) {
+            // TODO: 서버로 닉네임 중복 확인 요청
+            JOptionPane.showMessageDialog(this, "닉네임 중복 확인 기능은 구현 필요");
         }
     }
 
-    // 내부 클래스: 날짜 포맷터
+    // ===== 폼 검증 =====
+    private boolean validateForm() {
+        String id = idField.getText().trim();
+        String pw = new String(pwField.getPassword());
+        String pwc = new String(pwConfirmField.getPassword());
+        String name = nameField.getText().trim();
+
+        if (id.isEmpty()) {
+            warn("아이디를 입력하세요.", idField);
+            return false;
+        }
+        if (pw.isEmpty()) {
+            warn("비밀번호를 입력하세요.", pwField);
+            return false;
+        }
+        if (!pw.equals(pwc)) {
+            warn("비밀번호가 일치하지 않습니다.", pwConfirmField);
+            return false;
+        }
+        if (name.isEmpty()) {
+            warn("이름을 입력하세요.", nameField);
+            return false;
+        }
+        if (pwStrengthBar.getValue() < 40) {
+            warn("비밀번호 강도가 낮습니다. 숫자/문자/특수문자를 포함하세요.", pwField);
+            return false;
+        }
+        return true;
+    }
+
+    private void warn(String msg, JComponent comp) {
+        JOptionPane.showMessageDialog(this, msg);
+        comp.requestFocus();
+    }
+
+    // ===== 비밀번호 강도 평가(간단 규칙) =====
+    private void updatePasswordStrength() {
+        String pw = new String(pwField.getPassword());
+        String pwc = new String(pwConfirmField.getPassword());
+
+        int score = 0;
+        if (pw.length() >= 8) score += 25;
+        if (pw.matches(".*[A-Z].*")) score += 20;
+        if (pw.matches(".*[a-z].*")) score += 20;
+        if (pw.matches(".*\\d.*")) score += 20;
+        if (pw.matches(".*[^A-Za-z0-9].*")) score += 15;
+        if (pw.length() >= 12) score += 10;
+        score = Math.min(score, 100);
+
+        pwStrengthBar.setValue(score);
+        pwStrengthBar.setString(score + "%");
+
+        if (!pw.isEmpty() && !pwc.isEmpty()) {
+            pwStrengthLabel.setText(pw.equals(pwc) ? "비밀번호 강도" : "비밀번호 불일치");
+        } else {
+            pwStrengthLabel.setText("비밀번호 강도");
+        }
+    }
+
+    // ===== 숫자 입력 제한 Document =====
+    static class NumericDocument extends PlainDocument {
+        private final int maxLen;
+        NumericDocument(int maxLen) { this.maxLen = maxLen; }
+        @Override
+        public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+            if (str == null) return;
+            String onlyDigits = str.replaceAll("\\D", "");
+            if (onlyDigits.isEmpty()) return;
+            if (getLength() + onlyDigits.length() > maxLen) {
+                onlyDigits = onlyDigits.substring(0, maxLen - getLength());
+            }
+            super.insertString(offs, onlyDigits, a);
+        }
+    }
+
+    // ===== 이미지 스케일링(썸네일) =====
+    private Image scaleImage(Image src, int w, int h) {
+        int sw = src.getWidth(null);
+        int sh = src.getHeight(null);
+        if (sw <= 0 || sh <= 0) return src;
+
+        double rw = (double) w / sw;
+        double rh = (double) h / sh;
+        double r = Math.min(rw, rh); // 비율 유지(내접)
+
+        int tw = (int) (sw * r);
+        int th = (int) (sh * r);
+
+        Image scaled = src.getScaledInstance(tw, th, Image.SCALE_SMOOTH);
+        // 캔버스 중앙 정렬
+        BufferedImage canvas = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2 = canvas.createGraphics();
+        g2.setComposite(AlphaComposite.Src);
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        g2.setColor(Color.WHITE);
+        g2.fillRect(0, 0, w, h);
+        int x = (w - tw) / 2;
+        int y = (h - th) / 2;
+        g2.drawImage(scaled, x, y, null);
+        g2.dispose();
+        return canvas;
+    }
+
+    // ===== 날짜 포맷터 =====
     private static class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
         private final String datePattern = "yyyy-MM-dd";
         private final SimpleDateFormat dateFormatter = new SimpleDateFormat(datePattern);
 
         @Override
         public Object stringToValue(String text) throws ParseException {
-            return dateFormatter.parse(text);
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(dateFormatter.parse(text));
+            return cal;
         }
 
         @Override
         public String valueToString(Object value) throws ParseException {
-            if (value != null) {
-                Calendar cal = (Calendar) value;
+            if (value instanceof Calendar cal) {
                 return dateFormatter.format(cal.getTime());
             }
             return "";
         }
     }
-}
+
+    // ===== 실행 진입점(테스트용) =====
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(JoinFrame::new);
+    }
+   }
