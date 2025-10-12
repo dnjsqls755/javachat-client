@@ -39,7 +39,7 @@ public class Application {
     public Application() {
         try {
             // 애플리케이션 시작 시 소켓 연결
-            socket = new Socket("192.168.219.45", 9000);
+            socket = new Socket("192.168.0.24", 9000);
             System.out.println("connect success to chat server");
 
             sender = new MessageSender(socket);

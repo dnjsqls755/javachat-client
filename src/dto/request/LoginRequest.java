@@ -6,17 +6,17 @@ public class LoginRequest extends DTO {
 
     String id;
 
-    String name;
+    String pw;
 
-    public LoginRequest(String id, String name) {
+    public LoginRequest(String id, String pw) {
         super(DtoType.LOGIN);
 
         this.id = id;
-        this.name = name;
+        this.pw = pw;
     }
 
     @Override
     public String toString() {
-        return super.toString() + id + "," + name;
+        return super.toString() + id + "," + pw;
     }
 }

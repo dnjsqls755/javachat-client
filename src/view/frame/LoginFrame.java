@@ -14,10 +14,10 @@ public class LoginFrame extends JFrame implements ActionListener {
     LobbyFrame lobbyFrame;
 
     JLabel idLabel = new JLabel("아이디 ");
-    JLabel nameLabel = new JLabel("이름 ");
+    JLabel pwLabel = new JLabel("비밀번호");
 
     JTextField idTextF = new JTextField(20);
-    JTextField nameTextF = new JTextField(20);
+    JTextField pwTextF = new JTextField(20);
 
     JButton loginBtn = new JButton("로그인");
     JButton joinBtn = new JButton("회원가입"); // 회원가입 버튼 추가
@@ -32,10 +32,10 @@ public class LoginFrame extends JFrame implements ActionListener {
         idTextF.setBounds(200, 50, 300, 50);
         add(idTextF);
 
-        nameLabel.setBounds(100, 120, 100, 50);
-        add(nameLabel);
-        nameTextF.setBounds(200, 120, 300, 50);
-        add(nameTextF);
+        pwLabel.setBounds(100, 120, 100, 50);
+        add(pwLabel);
+        pwTextF.setBounds(200, 120, 300, 50);
+        add(pwTextF);
 
         loginBtn.setBounds(150, 220, 140, 50);
         loginBtn.addActionListener(this);
@@ -53,24 +53,24 @@ public class LoginFrame extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == loginBtn) {
             String id = idTextF.getText();
-            String name = nameTextF.getText();
+            String pw = pwTextF.getText();
 
             if (id.trim().isEmpty()) {
                 JOptionPane.showMessageDialog(null,
                         "user id is empty.", "Message", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            if (name.trim().isEmpty()) {
+            if (pw.trim().isEmpty()) {
                 JOptionPane.showMessageDialog(null,
                         "user name is empty.", "Message", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
-            User user = new User(id, name);
+            User user = new User(id, pw);
             Application.me = user;
             Application.users.add(user);
 
-            Application.sender.sendMessage(new LoginRequest(id, name));
+            Application.sender.sendMessage(new LoginRequest(id, pw));
 
             this.dispose();
             lobbyFrame.setVisible(true);
