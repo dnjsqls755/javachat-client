@@ -3,6 +3,7 @@ package dto.type;
 public enum DtoType {
     INIT,
     LOGIN_FAIL,
+    ID_CHECK,//아이디 중복확인
     LOGIN,
     CREATE_CHAT,
     ENTER_CHAT, EXIT_CHAT,

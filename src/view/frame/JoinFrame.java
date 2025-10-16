@@ -59,7 +59,7 @@ public class JoinFrame extends JFrame implements ActionListener {
     JButton uploadBtn = new JButton("사진 업로드");
 
     JButton joinBtn = new JButton("회원가입");
-    JButton backBtn = new JButton("뒤로 가기");
+    //JButton backBtn = new JButton("뒤로 가기");
 
     File profileImageFile = null;
 
@@ -100,7 +100,7 @@ public class JoinFrame extends JFrame implements ActionListener {
 
         // ===== 각 행 추가 =====
         addRow(main, gc, row++, "아이디", idField, idCheckBtn);
-
+        
         addRow(main, gc, row++, "비밀번호", pwField, null);
 
         // 비밀번호 확인 + 강도
@@ -191,7 +191,7 @@ public class JoinFrame extends JFrame implements ActionListener {
         // 하단 버튼
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
         btnPanel.add(joinBtn);
-        btnPanel.add(backBtn);
+       // btnPanel.add(backBtn);
 
         gc.gridx = 0; gc.gridy = row; gc.gridwidth = 3; gc.weightx = 1;
         main.add(btnPanel, gc);
@@ -209,7 +209,7 @@ public class JoinFrame extends JFrame implements ActionListener {
         uploadBtn.addActionListener(this);
         postalBtn.addActionListener(this);
         joinBtn.addActionListener(this);
-        backBtn.addActionListener(this);
+        //backBtn.addActionListener(this);
 
         idCheckBtn.addActionListener(this);
         nicknameCheckBtn.addActionListener(this);
@@ -281,8 +281,36 @@ public class JoinFrame extends JFrame implements ActionListener {
                 profilePreview.setIcon(new ImageIcon(scaleImage(icon.getImage(), 120, 120)));
             }
         } else if (src == postalBtn) {
-            JOptionPane.showMessageDialog(this, "우편번호 검색 기능은 구현 필요");
-        } else if (src == joinBtn) {
+            JOptionPane.showMessageDialog(this, "추후 api연동예정");
+        }else if (src == idCheckBtn) {
+            String userId = idField.getText().trim();
+            if (userId.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "아이디를 입력해주세요.");
+                idField.requestFocus();
+                return;
+            }
+
+            try (
+                Socket socket = new Socket("localhost", 9000);
+                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))
+            ) {
+                writer.println("ID_CHECK:" + userId);
+                String response = reader.readLine();
+
+                if ("ID_OK".equals(response)) {
+                    JOptionPane.showMessageDialog(this, "사용 가능한 아이디입니다.");
+                } else if ("ID_DUPLICATE".equals(response)) {
+                    JOptionPane.showMessageDialog(this, "이미 사용 중인 아이디입니다.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "알 수 없는 응답: " + response);
+                }
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "서버 연결 실패: " + ex.getMessage());
+            }
+        }else if (src == joinBtn) {
             if (!validateForm()) return;
 
             // 생년월일
@@ -329,7 +357,7 @@ public class JoinFrame extends JFrame implements ActionListener {
             	        case "SIGNUP_SUCCESS" -> JOptionPane.showMessageDialog(this, "회원가입 성공!");
             	        case "SIGNUP_DUPLICATE_ID" -> JOptionPane.showMessageDialog(this, "이미 존재하는 아이디입니다.");
             	        case "SIGNUP_INVALID_PASSWORD" -> JOptionPane.showMessageDialog(this, "비밀번호가 유효하지 않습니다.");
-            	        case "SIGNUP_FAIL" -> JOptionPane.showMessageDialog(this, "회원가입 실패. 서버 오류.");
+            	        case "SIGNUP_FAIL" -> JOptionPane.showMessageDialog(this, "회원가입 실패.");
             	        default -> JOptionPane.showMessageDialog(this, "알 수 없는 응답: " + response);
             	    }
             	} catch (Exception ex) {
