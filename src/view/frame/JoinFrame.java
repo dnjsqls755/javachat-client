@@ -122,6 +122,7 @@ public class JoinFrame extends JFrame implements ActionListener {
         main.add(strengthPanel, gc);
         row++;
 
+       //addRow(main, gc, row++, "닉네임", nicknameField, null);
         addRow(main, gc, row++, "닉네임", nicknameField, nicknameCheckBtn);
 
         // 이메일 (로컬 + @ + 도메인 콤보)
@@ -289,7 +290,6 @@ public class JoinFrame extends JFrame implements ActionListener {
                 idField.requestFocus();
                 return;
             }
-
             try (
                 Socket socket = new Socket("localhost", 9000);
                 PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
@@ -302,6 +302,34 @@ public class JoinFrame extends JFrame implements ActionListener {
                     JOptionPane.showMessageDialog(this, "사용 가능한 아이디입니다.");
                 } else if ("ID_DUPLICATE".equals(response)) {
                     JOptionPane.showMessageDialog(this, "이미 사용 중인 아이디입니다.");
+                } else {
+                    JOptionPane.showMessageDialog(this, "알 수 없는 응답: " + response);
+                }
+
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "서버 연결 실패: " + ex.getMessage());
+            }
+        }else if (src == nicknameCheckBtn) {
+            String nickname = nicknameField.getText().trim();
+            if (nickname.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "닉네임을 입력해주세요.");
+                nicknameField.requestFocus();
+                return;
+            }
+
+            try (
+                Socket socket = new Socket("localhost", 9000);
+                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))
+            ) {
+                writer.println("NICKNAME_CHECK:" + nickname);
+                String response = reader.readLine();
+
+                if ("NICKNAME_OK".equals(response)) {
+                    JOptionPane.showMessageDialog(this, "사용 가능한 닉네임입니다.");
+                } else if ("NICKNAME_DUPLICATE".equals(response)) {
+                    JOptionPane.showMessageDialog(this, "이미 사용 중인 닉네임입니다.");
                 } else {
                     JOptionPane.showMessageDialog(this, "알 수 없는 응답: " + response);
                 }
@@ -354,8 +382,7 @@ public class JoinFrame extends JFrame implements ActionListener {
 
             	    String response = reader.readLine();
             	    switch (response) {
-            	        case "SIGNUP_SUCCESS" -> JOptionPane.showMessageDialog(this, "회원가입 성공!");
-            	        case "SIGNUP_DUPLICATE_ID" -> JOptionPane.showMessageDialog(this, "이미 존재하는 아이디입니다.");
+            	        case "SIGNUP_SUCCESS" -> JOptionPane.showMessageDialog(this, "회원가입 성공!");           	        
             	        case "SIGNUP_INVALID_PASSWORD" -> JOptionPane.showMessageDialog(this, "비밀번호가 유효하지 않습니다.");
             	        case "SIGNUP_FAIL" -> JOptionPane.showMessageDialog(this, "회원가입 실패.");
             	        default -> JOptionPane.showMessageDialog(this, "알 수 없는 응답: " + response);
