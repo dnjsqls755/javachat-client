@@ -1,6 +1,6 @@
 package network;
 
-import app.ClientApplication;
+import app.Application;
 import domain.ChatRoom;
 import dto.response.*;
 import dto.type.DtoType;
@@ -31,7 +31,7 @@ public class MessageReceiver extends Thread {
                 if (str == null) {
                     try {
                         socket.close();
-                        System.out.println(ClientApplication.me.getName() + "'s socket is closed.");
+                        System.out.println(Application.me.getName() + "'s socket is closed.");
                     } catch(Exception e) {
                         e.printStackTrace();
                     }
@@ -72,16 +72,16 @@ public class MessageReceiver extends Thread {
         switch (type) {
             case LOGIN:
                 InitResponse initRes = new InitResponse(message);
-                ClientApplication.chatRooms = initRes.getChatRooms();
-                ClientApplication.users = initRes.getUsers();
+                Application.chatRooms = initRes.getChatRooms();
+                Application.users = initRes.getUsers();
 
-                LobbyFrame.chatRoomUserListPanel.paintChatUsers(ClientApplication.users);
+                LobbyFrame.chatRoomUserListPanel.paintChatUsers(Application.users);
                 LobbyFrame.chatRoomListPanel.paintChatRoomList();
                 break;
 
             case MESSAGE:
                 MessageResponse messageRes = new MessageResponse(message);
-                ClientApplication.chatPanelMap.get(messageRes.getChatRoomName()).addMessage(messageRes.getMessageType(), messageRes.getUserName(), messageRes.getMessage());
+                Application.chatPanelMap.get(messageRes.getChatRoomName()).addMessage(messageRes.getMessageType(), messageRes.getUserName(), messageRes.getMessage());
                 break;
 
             case CREATE_CHAT:
@@ -89,19 +89,19 @@ public class MessageReceiver extends Thread {
                 String chatRoomName = createChatRoomResponse.getName();
 
                 ChatRoom newChatRoom = new ChatRoom(chatRoomName);
-                ClientApplication.chatRooms.add(newChatRoom);
+                Application.chatRooms.add(newChatRoom);
 
                 LobbyFrame.chatRoomListPanel.addChatRoomLabel(chatRoomName);
                 break;
 
             case USER_LIST:
                 UserListResponse userListRes = new UserListResponse(message);
-                ClientApplication.chatRoomUserListPanelMap.get(userListRes.getChatRoomName()).paintChatUsers(userListRes.getUsers());
+                Application.chatRoomUserListPanelMap.get(userListRes.getChatRoomName()).paintChatUsers(userListRes.getUsers());
                 break;
 
             case CHAT_ROOM_LIST:
                 ChatRoomListResponse chatRoomListRes = new ChatRoomListResponse(message);
-                ClientApplication.chatRooms = chatRoomListRes.getChatRooms();
+                Application.chatRooms = chatRoomListRes.getChatRooms();
                 LobbyFrame.chatRoomListPanel.paintChatRoomList();
                 break;
         }

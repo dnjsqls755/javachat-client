@@ -1,6 +1,6 @@
 package view.panel;
 
-import app.ClientApplication;
+import app.Application;
 import dto.request.ExitChatRequest;
 import view.frame.LobbyFrame;
 
@@ -40,9 +40,9 @@ public class MenuPanel extends JPanel {
                 System.out.println("chat room = [" + chatRoomName + "] chat frame closed.");
 
                 // 채팅창이 닫히면 사용자 나가기 처리
-                ClientApplication.chatPanelMap.remove(chatRoomName);
-                ClientApplication.chatRoomUserListPanelMap.remove(chatRoomName);
-                ClientApplication.sender.sendMessage(new ExitChatRequest(chatRoomName, ClientApplication.me.getId()));
+                Application.chatPanelMap.remove(chatRoomName);
+                Application.chatRoomUserListPanelMap.remove(chatRoomName);
+                Application.sender.sendMessage(new ExitChatRequest(chatRoomName, Application.me.getId()));
 
                 frame.dispose(); // 채팅 화면 닫기
             }

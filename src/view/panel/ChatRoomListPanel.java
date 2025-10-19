@@ -1,6 +1,6 @@
 package view.panel;
 
-import app.ClientApplication;
+import app.Application;
 import domain.ChatRoom;
 import dto.request.EnterChatRequest;
 import view.frame.ChatFrame;
@@ -37,7 +37,7 @@ public class ChatRoomListPanel extends JPanel {
     public void paintChatRoomList() {
         labelPanel.removeAll();
 
-        for (ChatRoom chatRoom : ClientApplication.chatRooms) {
+        for (ChatRoom chatRoom : Application.chatRooms) {
             JLabel label = new JLabel(chatRoom.getName());
             label.addMouseListener(new ChatRoomMouseAdapter(chatRoom.getName()));
             labelPanel.add(label);
@@ -67,17 +67,17 @@ public class ChatRoomListPanel extends JPanel {
 
         @Override
         public void mouseClicked(MouseEvent e) {
-            if (ClientApplication.chatPanelMap.containsKey(chatRoomName)) {
+            if (Application.chatPanelMap.containsKey(chatRoomName)) {
                 JOptionPane.showMessageDialog(null,
                         "chat room is already opened.", "Message", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             ChatFrame chatFrame = new ChatFrame(chatRoomName);
-            ClientApplication.chatPanelMap.put(chatRoomName, chatFrame.getChatPanel()); // 채팅방 화면 관리
-            ClientApplication.chatRoomUserListPanelMap.put(chatRoomName, chatFrame.getChatRoomUserListPanel()); // 채팅방 사용자 리스트 관리
+            Application.chatPanelMap.put(chatRoomName, chatFrame.getChatPanel()); // 채팅방 화면 관리
+            Application.chatRoomUserListPanelMap.put(chatRoomName, chatFrame.getChatRoomUserListPanel()); // 채팅방 사용자 리스트 관리
 
-            ClientApplication.sender.sendMessage(new EnterChatRequest(chatRoomName, ClientApplication.me.getId()));
+            Application.sender.sendMessage(new EnterChatRequest(chatRoomName, Application.me.getId()));
         }
     }
 }

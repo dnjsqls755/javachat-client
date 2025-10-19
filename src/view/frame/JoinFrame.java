@@ -1,5 +1,14 @@
 package view.frame;
-
+import javax.imageio.ImageIO;
+import java.io.IOException;
+import java.io.ByteArrayOutputStream;
+import javafx.concurrent.Worker;
+import javafx.application.Platform;
+import javafx.embed.swing.JFXPanel;
+import javafx.scene.Scene;
+import javafx.scene.web.WebEngine;
+import javafx.scene.web.WebView;
+import netscape.javascript.JSObject;
 import net.sourceforge.jdatepicker.impl.JDatePanelImpl;
 import net.sourceforge.jdatepicker.impl.JDatePickerImpl;
 import net.sourceforge.jdatepicker.impl.UtilDateModel;
@@ -22,7 +31,7 @@ import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import dto.request.JoinRequest;
-
+import java.io.DataOutputStream;
 
 public class JoinFrame extends JFrame implements ActionListener {
 
@@ -277,12 +286,18 @@ public class JoinFrame extends JFrame implements ActionListener {
             int result = chooser.showOpenDialog(this);
             if (result == JFileChooser.APPROVE_OPTION) {
                 profileImageFile = chooser.getSelectedFile();
-                ImageIcon icon = new ImageIcon(profileImageFile.getAbsolutePath());
-                profilePreview.setText(null);
-                profilePreview.setIcon(new ImageIcon(scaleImage(icon.getImage(), 120, 120)));
+                try {
+    BufferedImage originalImage = ImageIO.read(profileImageFile);
+    BufferedImage resizedImage = (BufferedImage) scaleImage(originalImage, 120, 120);
+    profilePreview.setText(null);
+    profilePreview.setIcon(new ImageIcon(resizedImage));
+} catch (IOException ex) {
+    ex.printStackTrace();
+    JOptionPane.showMessageDialog(this, "이미지 로딩 실패: " + ex.getMessage());
+}
             }
         } else if (src == postalBtn) {
-            JOptionPane.showMessageDialog(this, "추후 api연동예정");
+        	openPostcodeDialog();
         }else if (src == idCheckBtn) {
             String userId = idField.getText().trim();
             if (userId.isEmpty()) {
@@ -373,26 +388,121 @@ public class JoinFrame extends JFrame implements ActionListener {
             req.setBirthDate(birthDate);
 
             // 서버 전송
-            try (
-            	    Socket socket = new Socket("localhost", 9000);
-            	    PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-            	    BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()))
-            	) {
-            	    writer.println("SIGNUP:" + req.toMessage());
 
-            	    String response = reader.readLine();
-            	    switch (response) {
-            	        case "SIGNUP_SUCCESS" -> JOptionPane.showMessageDialog(this, "회원가입 성공!");           	        
-            	        case "SIGNUP_INVALID_PASSWORD" -> JOptionPane.showMessageDialog(this, "비밀번호가 유효하지 않습니다.");
-            	        case "SIGNUP_FAIL" -> JOptionPane.showMessageDialog(this, "회원가입 실패.");
-            	        default -> JOptionPane.showMessageDialog(this, "알 수 없는 응답: " + response);
-            	    }
-            	} catch (Exception ex) {
-            	    ex.printStackTrace();
-            	    JOptionPane.showMessageDialog(this, "서버 연결 실패: " + ex.getMessage());
-            	}
+try (
+    Socket socket = new Socket("localhost", 9000);
+    PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+    BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+    DataOutputStream dos = new DataOutputStream(socket.getOutputStream())
+) {
+    writer.println("SIGNUP:" + req.toMessage());
+
+    // 이미지 전송
+    if (profileImageFile != null) {
+        byte[] imageBytes = getResizedProfileImageBytes(profileImageFile);
+        dos.writeInt(imageBytes.length); // 이미지 크기
+        dos.write(imageBytes);           // 이미지 데이터
+        dos.flush();
+    }
+
+    String response = reader.readLine();
+    switch (response) {
+        case "SIGNUP_SUCCESS" -> JOptionPane.showMessageDialog(this, "회원가입 성공!");
+        case "SIGNUP_DUPLICATE_ID" -> JOptionPane.showMessageDialog(this, "이미 존재하는 아이디입니다.");
+        case "SIGNUP_INVALID_PASSWORD" -> JOptionPane.showMessageDialog(this, "비밀번호가 유효하지 않습니다.");
+        case "SIGNUP_FAIL" -> JOptionPane.showMessageDialog(this, "회원가입 실패.");
+        default -> JOptionPane.showMessageDialog(this, "알 수 없는 응답: " + response);
+    }
+} catch (Exception ex) {
+    ex.printStackTrace();
+    JOptionPane.showMessageDialog(this, "서버 연결 실패: " + ex.getMessage());
+}
+
           }
        }
+ // Daum(카카오) 우편번호 서비스 띄워서 선택 결과를 Swing 필드에 반영
+    private void openPostcodeDialog() {
+        // 모달 다이얼로그 + JavaFX 패널 생성
+        JDialog dialog = new JDialog(this, "우편번호 검색", true);
+        JFXPanel jfxPanel = new JFXPanel(); // JavaFX 초기화 트리거
+        dialog.setLayout(new BorderLayout());
+        dialog.add(jfxPanel, BorderLayout.CENTER);
+        dialog.setSize(500, 600);
+        dialog.setLocationRelativeTo(this);
+
+        // JavaFX 스레드에서 WebView 구성
+        Platform.runLater(() -> {
+            WebView webView = new WebView();
+            WebEngine webEngine = webView.getEngine();
+
+            // 페이지 로드 완료 후 JS ↔ Java 브릿지 연결
+            webEngine.getLoadWorker().stateProperty().addListener((obs, old, state) -> {
+                if (state == Worker.State.SUCCEEDED) {
+                    // window.app.setAddress(...) 로 Java 메서드 호출 가능하게 설정
+                    JSObject window = (JSObject) webEngine.executeScript("window");
+                    window.setMember("app", new Object() {
+                        // JS에서 선택된 주소를 넘겨주면 Swing 필드에 세팅
+                        public void setAddress(String zonecode, String roadAddr, String jibunAddr) {
+                            SwingUtilities.invokeLater(() -> {
+                                postalField.setText(zonecode != null ? zonecode : "");
+                                String addr = (roadAddr != null && !roadAddr.isEmpty())
+                                        ? roadAddr
+                                        : (jibunAddr != null ? jibunAddr : "");
+                                System.out.println("test : " + addr);
+                                addressField.setText(addr);
+                                detailAddressField.requestFocus(); // 상세주소는 사용자가 이어서 입력
+                                dialog.dispose(); // 선택 완료 후 다이얼로그 닫기
+                            });
+                        }
+                    });
+                }
+            });
+
+            // 다음 우편번호 서비스 임베드 HTML
+            String html = """
+                <!DOCTYPE html>
+                <html>
+                <head>
+                  <meta charset="UTF-8">
+                  <title>주소 검색</title>
+                  <style>
+                    html, body { margin:0; padding:0; height:100%; }
+                    #wrap { width:100%; height:100%; }
+                  </style>
+                <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+                </head>
+                <body>
+                  <div id="wrap"></div>
+                  <script>
+                    (function() {
+                      new daum.Postcode({
+                        oncomplete: function(data) {
+                          var zonecode = data.zonecode || '';
+                          var roadAddr = data.roadAddress || '';
+                          var jibunAddr = data.jibunAddress || '';
+                            
+                     
+                          // Java 쪽 브릿지로 전송
+                          if (window.app && typeof window.app.setAddress === 'function') {
+                            window.app.setAddress(zonecode, roadAddr, jibunAddr);
+                          }
+                        },
+                        width: '100%',
+                        height: '100%'
+                      }).embed(document.getElementById('wrap'));
+                    })();
+                  </script>
+                </body>
+                </html>
+            """;
+
+            webEngine.loadContent(html);
+            jfxPanel.setScene(new Scene(webView));
+        });
+
+        dialog.setVisible(true);
+    }
+
     // ===== 폼 검증 =====
     private boolean validateForm() {
         String id = idField.getText().trim();
@@ -477,24 +587,48 @@ public class JoinFrame extends JFrame implements ActionListener {
         double rw = (double) w / sw;
         double rh = (double) h / sh;
         double r = Math.min(rw, rh); // 비율 유지(내접)
-
         int tw = (int) (sw * r);
         int th = (int) (sh * r);
 
         Image scaled = src.getScaledInstance(tw, th, Image.SCALE_SMOOTH);
-        // 캔버스 중앙 정렬
+
         BufferedImage canvas = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2 = canvas.createGraphics();
         g2.setComposite(AlphaComposite.Src);
         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g2.setColor(Color.WHITE);
         g2.fillRect(0, 0, w, h);
-        int x = (w - tw) / 2;
-        int y = (h - th) / 2;
+
+        // ★ 중앙 정렬 
+        int x = (w - tw) / 2; // 중앙 정렬
+        int y = (h - th) / 2; // 중앙 정렬
+      
+
         g2.drawImage(scaled, x, y, null);
         g2.dispose();
         return canvas;
     }
+    //이미지 리사이싱
+     private byte[] getResizedProfileImageBytes(File originalFile) {
+         try {
+             ImageIcon icon = new ImageIcon(originalFile.getAbsolutePath());
+             Image resized = scaleImage(icon.getImage(), 120, 120);
+
+             BufferedImage buffered = new BufferedImage(120, 120, BufferedImage.TYPE_INT_RGB);
+             Graphics2D g2 = buffered.createGraphics();
+             g2.drawImage(resized, 0, 0, null);
+             g2.dispose();
+
+             ByteArrayOutputStream baos = new ByteArrayOutputStream();
+             ImageIO.write(buffered, "jpg", baos); // 또는 png
+             return baos.toByteArray();
+         } catch (Exception e) {
+             e.printStackTrace();
+             return null;
+         }
+     }
+
+ 
 
     // ===== 날짜 포맷터 =====
     private static class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
