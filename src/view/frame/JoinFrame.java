@@ -386,9 +386,7 @@ public class JoinFrame extends JFrame implements ActionListener {
             req.setPostalCode(postalField.getText().trim());
             req.setGender((String) genderCombo.getSelectedItem());
             req.setBirthDate(birthDate);
-
-            // 서버 전송
-
+// 서버 전송
 try (
     Socket socket = new Socket("localhost", 9000);
     PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
@@ -608,7 +606,7 @@ try (
         g2.dispose();
         return canvas;
     }
-    //이미지 리사이싱
+    //이미지 리사이징
      private byte[] getResizedProfileImageBytes(File originalFile) {
          try {
              ImageIcon icon = new ImageIcon(originalFile.getAbsolutePath());

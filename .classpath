@@ -47,5 +47,6 @@
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="C:/Users/dnjsq/Downloads/json-20230618.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
