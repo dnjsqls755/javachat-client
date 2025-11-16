@@ -35,7 +35,7 @@ public class ChatRoomUserListPanel extends JPanel {
         labelPanel.removeAll();
 
         for (User user : chatUsers) {
-            labelPanel.add(new Label(user.getName()));
+            labelPanel.add(new Label(user.getNickName()));
         }
 
         revalidate();

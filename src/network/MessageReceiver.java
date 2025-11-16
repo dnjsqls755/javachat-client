@@ -31,7 +31,7 @@ public class MessageReceiver extends Thread {
                 if (str == null) {
                     try {
                         socket.close();
-                        System.out.println(Application.me.getName() + "'s socket is closed.");
+                        System.out.println(Application.me.getNickName() + "'s socket is closed.");
                     } catch(Exception e) {
                         e.printStackTrace();
                     }

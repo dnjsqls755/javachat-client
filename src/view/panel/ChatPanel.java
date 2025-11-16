@@ -65,7 +65,7 @@ public class ChatPanel extends JPanel implements ActionListener {
 
         if (!message.isEmpty()) {
             Application.sender
-                    .sendMessage(new MessageRequest(MessageType.CHAT, chatRoomName, Application.me.getName(), message));
+                    .sendMessage(new MessageRequest(MessageType.CHAT, chatRoomName, Application.me.getNickName(), message));
             chatTextA.append("내가 보낸 메시지: " + message + "\n");
         }
         msgTextF.setText("");
