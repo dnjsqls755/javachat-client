@@ -4,7 +4,9 @@ import app.Application;
 import domain.User;
 import dto.request.LoginRequest;
 import network.MessageSender;
-
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.IOException;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -133,24 +135,42 @@ public class LoginFrame extends JFrame implements ActionListener {
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == loginBtn) {
-            String id = idTextF.getText();
-            String pw = new String(pwTextF.getPassword());
-            if (id.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(null, "아이디를 입력해주세요.", "Message", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            if (pw.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(null, "비밀번호를 입력해주세요.", "Message", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            User user = new User(id, pw);
-            Application.me = user;
-            Application.users.add(user);
-            Application.sender.sendMessage(new LoginRequest(id, pw));
-            this.dispose();
-            lobbyFrame.setVisible(true);
-        }
+    	if (e.getSource() == loginBtn) {
+    	    String id = idTextF.getText();
+    	    String pw = new String(pwTextF.getPassword());
+
+    	    if (id.trim().isEmpty()) {
+    	        JOptionPane.showMessageDialog(null, "아이디를 입력하세요.", "로그인 오류", JOptionPane.ERROR_MESSAGE);
+    	        return;
+    	    }
+    	    if (pw.trim().isEmpty()) {
+    	        JOptionPane.showMessageDialog(null, "비밀번호를 입력하세요.", "로그인 오류", JOptionPane.ERROR_MESSAGE);
+    	        return;
+    	    }
+
+    	    User user = new User(id, pw);
+    	    Application.me = user;
+    	    Application.users.add(user);
+    	    Application.sender.sendMessage(new LoginRequest(id, pw));
+
+    	    try {
+    	        BufferedReader reader = new BufferedReader(new InputStreamReader(Application.socket.getInputStream()));
+    	        String response = reader.readLine();
+
+    	        if ("LOGIN_FAIL".equals(response)) {
+    	            JOptionPane.showMessageDialog(null, "아이디 또는 비밀번호가 올바르지 않습니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
+    	            return;
+    	        }
+
+    	        // 로그인 성공 시
+    	        this.dispose();
+    	        lobbyFrame.setVisible(true);
+
+    	    } catch (IOException ex) {
+    	        ex.printStackTrace();
+    	        JOptionPane.showMessageDialog(null, "서버와의 연결에 문제가 발생했습니다.", "오류", JOptionPane.ERROR_MESSAGE);
+    	    }
+    	}
         if (e.getSource() == joinBtn) {
             new JoinFrame();
         }
