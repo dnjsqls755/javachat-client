@@ -9,8 +9,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
-// [추가 import]
 import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
 import java.time.LocalDate;
@@ -19,26 +17,46 @@ import java.util.Locale;
 
 public class LoginFrame extends JFrame implements ActionListener {
     LobbyFrame lobbyFrame;
-
     JLabel idLabel = new JLabel("아이디 ");
     JLabel pwLabel = new JLabel("비밀번호");
     JTextField idTextF = new JTextField(20);
     JPasswordField pwTextF = new JPasswordField(20);
     JButton loginBtn = new JButton("로그인");
-    JButton joinBtn = new JButton("회원가입"); // 회원가입 버튼 추가
+    JButton joinBtn = new JButton("회원가입");
 
-    // [추가] 당일 날짜 배지 아이콘 라벨 + 마지막 날짜 캐싱
+    // 추가: 도시 선택 콤보박스
+    JLabel cityLabel = new JLabel("도시");
+    String[] cities = {
+    		"Seoul",       // 서울특별시
+    	    "Busan",       // 부산광역시
+    	    "Daegu",       // 대구광역시
+    	    "Incheon",     // 인천광역시
+    	    "Gwangju",     // 광주광역시
+    	    "Daejeon",     // 대전광역시
+    	    "Ulsan",       // 울산광역시
+    	    "Sejong",      // 세종특별자치시
+    	    "Gyeonggi-do", // 경기도
+    	    "Gangwon-do",  // 강원도
+    	    "Chungcheongbuk-do", // 충청북도
+    	    "Chungcheongnam-do", // 충청남도
+    	    "Jeollabuk-do",      // 전라북도
+    	    "Jeollanam-do",      // 전라남도
+    	    "Gyeongsangbuk-do",  // 경상북도
+    	    "Gyeongsangnam-do",  // 경상남도
+    	    "Jeju-do"            // 제주특별자치도
+};
+    JComboBox<String> cityComboBox = new JComboBox<>(cities);
+
+    // 날짜 & 날씨 라벨
     private final JLabel dateBadgeLabel = new JLabel();
-
     private final JLabel weatherImageLabel = new JLabel();
-
     private LocalDate lastDate = LocalDate.now();
 
     public LoginFrame(LobbyFrame lobbyFrame) {
         this.lobbyFrame = lobbyFrame;
-
         setLayout(null);
 
+        // 아이디 & 비밀번호
         idLabel.setBounds(100, 50, 100, 50);
         add(idLabel);
         idTextF.setBounds(200, 50, 300, 50);
@@ -49,45 +67,57 @@ public class LoginFrame extends JFrame implements ActionListener {
         pwTextF.setBounds(200, 120, 300, 50);
         add(pwTextF);
 
-        loginBtn.setBounds(150, 220, 140, 50);
+        // 로그인 & 회원가입 버튼
+        loginBtn.setBounds(150, 280, 140, 50);
         loginBtn.addActionListener(this);
         add(loginBtn);
 
-        joinBtn.setBounds(310, 220, 140, 50); // 회원가입 버튼 위치 설정
+        joinBtn.setBounds(310, 280, 140, 50);
         joinBtn.addActionListener(this);
         add(joinBtn);
 
-        // [추가] 날짜 배지 라벨 배치(우측 상단)
-        dateBadgeLabel.setBounds(520, 10, 64, 64); // 위치/크기 필요 시 조정
-        add(dateBadgeLabel);
+        // 도시 선택 콤보박스
+        cityLabel.setBounds(100, 180, 100, 50);
+        cityComboBox.setBounds(200, 180, 300, 50);
+        add(cityLabel);
+        add(cityComboBox);
 
-        // [추가] 최초 표시
+        // 날짜 배지
+        dateBadgeLabel.setBounds(520, 10, 64, 64);
+        add(dateBadgeLabel);
         dateBadgeLabel.setIcon(new ImageIcon(CalendarBadge.createBadge(LocalDate.now(), 64, 64)));
 
-        // 날씨 이미지 라벨 (우측 상단)
+        // 날씨 이미지
         weatherImageLabel.setBounds(520, 80, 64, 64);
         add(weatherImageLabel);
 
-        // 날씨 API 호출 및 이미지 설정
-        String apiKey = "1e9136088e03c34b29269b0e130d17a1"; // 발급받은 API 키
-        String weather = WeatherFetcher.getWeatherCondition("Seoul", apiKey);
-        weatherImageLabel.setIcon(getWeatherIcon(weather));
+        // 날씨 API 호출
+        String apiKey = "1e9136088e03c34b29269b0e130d17a1";
+        updateWeatherIcon(apiKey);
 
+        // 도시 변경 시 날씨 갱신
+        cityComboBox.addActionListener(e -> updateWeatherIcon(apiKey));
 
-        // [추가] 자정 이후 자동 갱신(1분마다 날짜 변화만 체크)
+        // 자동 갱신 (1분마다 날짜 & 날씨)
         new javax.swing.Timer(60_000, e -> {
             LocalDate today = LocalDate.now();
             if (!today.equals(lastDate)) {
                 lastDate = today;
                 dateBadgeLabel.setIcon(new ImageIcon(CalendarBadge.createBadge(today, 64, 64)));
             }
+            updateWeatherIcon(apiKey);
         }).start();
 
         setSize(600, 400);
         setVisible(true);
     }
 
-    
+    private void updateWeatherIcon(String apiKey) {
+        String city = (String) cityComboBox.getSelectedItem();
+        String weather = WeatherFetcher.getWeatherCondition(city, apiKey);
+        weatherImageLabel.setIcon(getWeatherIcon(weather));
+    }
+
     private ImageIcon getWeatherIcon(String weather) {
         switch (weather) {
             case "Clear":
@@ -101,46 +131,33 @@ public class LoginFrame extends JFrame implements ActionListener {
         }
     }
 
-
     @Override
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == loginBtn) {
             String id = idTextF.getText();
             String pw = new String(pwTextF.getPassword());
-
             if (id.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(null,
-                        "user id is empty.", "Message", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "아이디를 입력해주세요.", "Message", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             if (pw.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(null,
-                        "user name is empty.", "Message", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(null, "비밀번호를 입력해주세요.", "Message", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-
             User user = new User(id, pw);
             Application.me = user;
             Application.users.add(user);
             Application.sender.sendMessage(new LoginRequest(id, pw));
-
             this.dispose();
             lobbyFrame.setVisible(true);
         }
-
         if (e.getSource() == joinBtn) {
-            new JoinFrame(); // 회원가입 창 열기
+            new JoinFrame();
         }
     }
 
-    // ------------------------------------------------------------------------
-    //   당일 날짜 배지 이미지를 직접 그리는 유틸 (정적 내부 클래스)
-    // - 외부 API 없이 BufferedImage + Graphics2D로 렌더링
-    // - 색상/폰트/크기 원하는 대로 커스터마이즈 가능
-    // ------------------------------------------------------------------------
+    // 날짜 배지 생성 클래스
     private static final class CalendarBadge {
-
-        /** 임의 날짜로 배지 생성 */
         static BufferedImage createBadge(LocalDate date, int width, int height) {
             BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
             Graphics2D g = img.createGraphics();
@@ -148,55 +165,46 @@ public class LoginFrame extends JFrame implements ActionListener {
                 g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
-                // 배경 그라디언트
                 GradientPaint gp = new GradientPaint(0, 0, new Color(245, 247, 250),
-                                                     0, height, new Color(230, 234, 240));
+                        0, height, new Color(230, 234, 240));
                 g.setPaint(gp);
                 g.fill(new RoundRectangle2D.Float(0, 0, width, height, 22, 22));
 
-                // 상단 헤더(월)
                 int headerH = Math.max(22, height / 5);
-                g.setColor(new Color(220, 65, 65)); // 캘린더 느낌 레드
+                g.setColor(new Color(220, 65, 65));
                 g.fill(new RoundRectangle2D.Float(0, 0, width, headerH, 22, 22));
                 g.fillRect(0, headerH - 10, width, 10);
 
                 Locale ko = Locale.KOREAN;
-                String monthText = date.getMonth().getDisplayName(TextStyle.SHORT, ko);  // "10월" 등
-                String dowText   = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, ko); // "일" 등
-                String yearText  = String.valueOf(date.getYear());
-                String dayText   = String.valueOf(date.getDayOfMonth());
+                String monthText = date.getMonth().getDisplayName(TextStyle.SHORT, ko);
+                String dowText = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, ko);
+                String yearText = String.valueOf(date.getYear());
+                String dayText = String.valueOf(date.getDayOfMonth());
 
-                // 상단 월 텍스트
                 g.setColor(Color.WHITE);
                 Font headerFont = fontOrFallback("Malgun Gothic", Font.BOLD, Math.max(12, headerH - 8));
                 g.setFont(headerFont);
                 drawCentered(g, monthText, new Rectangle(0, 0, width, headerH));
 
-                // 본문: 날짜(큰 숫자)
                 Font dayFont = fontOrFallback("Malgun Gothic", Font.BOLD, Math.max(28, height / 2));
                 g.setFont(dayFont);
                 Rectangle dayArea = new Rectangle(0, headerH, width, height - headerH - (height / 6));
-
-                // 그림자
                 g.setColor(new Color(0, 0, 0, 40));
                 drawCentered(g, dayText, new Rectangle(dayArea.x, dayArea.y + 2, dayArea.width, dayArea.height));
                 g.setColor(new Color(40, 40, 40));
                 drawCentered(g, dayText, dayArea);
 
-                // 하단: 요일 · 연도
                 Font subFont = fontOrFallback("Malgun Gothic", Font.PLAIN, Math.max(12, height / 8));
                 g.setFont(subFont);
                 g.setColor(new Color(90, 90, 90));
                 String sub = dowText + " · " + yearText;
                 drawCentered(g, sub, new Rectangle(0, height - (height / 6), width, (height / 6)));
-
             } finally {
                 g.dispose();
             }
             return img;
         }
 
-        /** 폰트가 없으면 시스템 폴백으로 대체 */
         private static Font fontOrFallback(String name, int style, int size) {
             try {
                 return new Font(name, style, size);
@@ -205,7 +213,6 @@ public class LoginFrame extends JFrame implements ActionListener {
             }
         }
 
-        /** 텍스트를 영역 중앙에 그리기 */
         private static void drawCentered(Graphics2D g, String text, Rectangle area) {
             FontMetrics fm = g.getFontMetrics();
             int textW = fm.stringWidth(text);

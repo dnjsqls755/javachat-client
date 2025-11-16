@@ -610,9 +610,9 @@ try (
      private byte[] getResizedProfileImageBytes(File originalFile) {
          try {
              ImageIcon icon = new ImageIcon(originalFile.getAbsolutePath());
-             Image resized = scaleImage(icon.getImage(), 120, 120);
+             Image resized = scaleImage(icon.getImage(), 200, 200);
 
-             BufferedImage buffered = new BufferedImage(120, 120, BufferedImage.TYPE_INT_RGB);
+             BufferedImage buffered = new BufferedImage(200, 200, BufferedImage.TYPE_INT_RGB);
              Graphics2D g2 = buffered.createGraphics();
              g2.drawImage(resized, 0, 0, null);
              g2.dispose();
@@ -625,9 +625,6 @@ try (
              return null;
          }
      }
-
- 
-
     // ===== 날짜 포맷터 =====
     private static class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
         private final String datePattern = "yyyy-MM-dd";

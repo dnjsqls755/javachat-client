@@ -69,7 +69,7 @@ public class ChatRoomListPanel extends JPanel {
         public void mouseClicked(MouseEvent e) {
             if (Application.chatPanelMap.containsKey(chatRoomName)) {
                 JOptionPane.showMessageDialog(null,
-                        "chat room is already opened.", "Message", JOptionPane.ERROR_MESSAGE);
+                        "이미 열려있는 채팅방입니다.", "Message", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
