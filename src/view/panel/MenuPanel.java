@@ -19,7 +19,7 @@ public class MenuPanel extends JPanel {
     
     JButton backBtn = new JButton("뒤로가기");
     
-    JButton logoutBtn = new JButton("로그아웃");
+    JButton closeBtn = new JButton("종료");
 
     public MenuPanel(JFrame frame, String chatRoomName) {
         setLayout(null);
@@ -37,53 +37,41 @@ public class MenuPanel extends JPanel {
         add(createChatBtn);
         createChatBtn.setVisible(false); // 로비 채팅방, 생성된 채팅방에 따라 버튼 show, hide
 
-        logoutBtn.setBounds(200, 10, 185, 35);
-        logoutBtn.addActionListener(new ActionListener() {
+        closeBtn.setBounds(200, 10, 185, 35);
+        closeBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.out.println("logout btn clicked");
+                System.out.println("close btn clicked - 클라이언트 종료");
                 
-                // 로그아웃 요청 전송
-                Application.sender.sendMessage(new LogoutRequest(Application.me.getId()));
+                // 서버에 로그아웃 요청 전송
+                if (Application.me != null) {
+                    Application.sender.sendMessage(new LogoutRequest(Application.me.getId()));
+                    
+                    try {
+                        // 서버가 응답을 처리할 시간을 줌
+                        Thread.sleep(200);
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                }
                 
+                // 소켓 연결 종료
                 try {
-                    // 서버가 응답을 처리할 시간을 줌
-                    Thread.sleep(200);
-                } catch (InterruptedException ex) {
+                    if (Application.socket != null && !Application.socket.isClosed()) {
+                        Application.socket.close();
+                        System.out.println("[종료] 소켓 연결 종료");
+                    }
+                } catch (Exception ex) {
                     ex.printStackTrace();
                 }
                 
-                // 로비 프레임 숨기기
-                if (frame instanceof LobbyFrame) {
-                    frame.setVisible(false);
-                    
-                    // 채팅 패널 및 사용자 정보 초기화
-                    Application.chatPanelMap.clear();
-                    Application.chatRoomUserListPanelMap.clear();
-                    Application.users.clear();
-                    Application.chatRooms.clear();
-                    
-                    // 소켓 닫기 전에 사용자 ID 저장
-                    String userId = Application.me.getId();
-                    Application.me = null;
-                    
-                    // 소켓 연결 종료
-                    try {
-                        if (Application.socket != null && !Application.socket.isClosed()) {
-                            Application.socket.close();
-                            System.out.println("[LOGOUT] 소켓 연결 종료: " + userId);
-                        }
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                    
-                    // 로그인 화면 다시 표시
-                    new view.frame.LoginFrame((LobbyFrame)frame);
-                }
+                // 프로그램 종료
+                System.out.println("[종료] 프로그램 종료");
+                System.exit(0);
             }
         });
-        add(logoutBtn);
-        logoutBtn.setVisible(false);
+        add(closeBtn);
+        closeBtn.setVisible(false);
 
         backBtn.setBounds(15, 10, 180, 35);
         backBtn.addActionListener(new ActionListener() {
@@ -131,8 +119,8 @@ public class MenuPanel extends JPanel {
         createChatBtn.setVisible(bool);
     }
     
-    public void setLogoutBtnVisible(boolean bool) {
-        logoutBtn.setVisible(bool);
+    public void setCloseBtnVisible(boolean bool) {
+        closeBtn.setVisible(bool);
     }
     
     public void setBackBtnVisible(boolean bool) {

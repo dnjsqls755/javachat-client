@@ -37,7 +37,7 @@ public class LobbyFrame extends JFrame implements WindowListener {
         chatRoomListPanel = new ChatRoomListPanel(this);
         menuPanel = new MenuPanel(this, Application.LOBBY_CHAT_NAME);
         menuPanel.setCreateChatBtnVisible(true);
-        menuPanel.setLogoutBtnVisible(true);
+        menuPanel.setCloseBtnVisible(true);
 
         this.addWindowListener(this);
 
@@ -59,7 +59,33 @@ public class LobbyFrame extends JFrame implements WindowListener {
 
     @Override
     public void windowClosing(WindowEvent e) {
-
+        System.out.println("window closing - 프로그램 종료 처리");
+        
+        // 서버에 로그아웃 요청 전송
+        if (Application.me != null) {
+            Application.sender.sendMessage(new dto.request.LogoutRequest(Application.me.getId()));
+            
+            try {
+                // 서버가 응답을 처리할 시간을 줌
+                Thread.sleep(200);
+            } catch (InterruptedException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
+        // 소켓 연결 종료
+        try {
+            if (Application.socket != null && !Application.socket.isClosed()) {
+                Application.socket.close();
+                System.out.println("[종료] 소켓 연결 종료");
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        
+        // 프로그램 종료
+        System.out.println("[종료] 프로그램 종료");
+        System.exit(0);
     }
 
     @Override
