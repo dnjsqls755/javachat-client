@@ -28,6 +28,7 @@ public class ChatFrame extends JFrame implements WindowListener {
         chatPanel = new ChatPanel(this, chatRoomName);
         chatRoomUserListPanel = new ChatRoomUserListPanel(this);
         menuPanel = new MenuPanel(this, chatRoomName);
+        menuPanel.setBackBtnVisible(true);
         menuPanel.setExitBtnVisible(true);
 
         addWindowListener(this);

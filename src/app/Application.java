@@ -4,6 +4,7 @@ import domain.ChatRoom;
 import domain.User;
 import network.MessageReceiver;
 import network.MessageSender;
+import util.PostcodeHttpServer;
 import view.frame.LobbyFrame;
 import view.panel.ChatPanel;
 import view.panel.ChatRoomUserListPanel;
@@ -38,6 +39,9 @@ public class Application {
 
     public Application() {
         try {
+            // 우편번호 검색용 HTTP 서버 시작
+            PostcodeHttpServer.start();
+            
             // 애플리케이션 시작 시 소켓 연결
             socket = new Socket("192.168.0.22", 9000);
             System.out.println("connect success to chat server");

@@ -37,6 +37,7 @@ public class LobbyFrame extends JFrame implements WindowListener {
         chatRoomListPanel = new ChatRoomListPanel(this);
         menuPanel = new MenuPanel(this, Application.LOBBY_CHAT_NAME);
         menuPanel.setCreateChatBtnVisible(true);
+        menuPanel.setLogoutBtnVisible(true);
 
         this.addWindowListener(this);
 

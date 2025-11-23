@@ -13,11 +13,11 @@ public class MessageResponse {
     String message;
 
     public MessageResponse(String message) {
-        String[] value = message.split(",");
+        String[] value = message.split(",", 4);
         this.messageType = MessageType.valueOf(value[0]);
         this.chatRoomName = value[1];
-        this.userName = value[2];
-        this.message = value[3];
+        this.userName = value.length > 2 ? value[2] : "";
+        this.message = value.length > 3 ? value[3] : "";
     }
 
     public MessageType getMessageType() {

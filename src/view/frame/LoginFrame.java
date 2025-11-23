@@ -116,8 +116,19 @@ public class LoginFrame extends JFrame implements ActionListener {
 
     private void updateWeatherIcon(String apiKey) {
         String city = (String) cityComboBox.getSelectedItem();
-        String weather = WeatherFetcher.getWeatherCondition(city, apiKey);
-        weatherImageLabel.setIcon(getWeatherIcon(weather));
+        
+        // 백그라운드에서 날씨 정보 조회
+        new Thread(() -> {
+            String[] weatherInfo = WeatherFetcher.getWeatherInfo(city, apiKey);
+            String weather = weatherInfo[0];
+            String temp = weatherInfo[1];
+            
+            // UI 업데이트는 EDT에서
+            SwingUtilities.invokeLater(() -> {
+                weatherImageLabel.setIcon(getWeatherIcon(weather));
+                weatherImageLabel.setToolTipText(weather + " - " + temp + "°C");
+            });
+        }).start();
     }
 
     private ImageIcon getWeatherIcon(String weather) {
@@ -148,28 +159,15 @@ public class LoginFrame extends JFrame implements ActionListener {
     	        return;
     	    }
 
-    	    User user = new User(id, pw);
+    	    User user = new User(id, "");  // 닉네임은 서버에서 받아옴
     	    Application.me = user;
-    	    Application.users.add(user);
     	    Application.sender.sendMessage(new LoginRequest(id, pw));
-
-    	    try {
-    	        BufferedReader reader = new BufferedReader(new InputStreamReader(Application.socket.getInputStream()));
-    	        String response = reader.readLine();
-
-    	        if ("LOGIN_FAIL".equals(response)) {
-    	            JOptionPane.showMessageDialog(null, "아이디 또는 비밀번호가 올바르지 않습니다.", "로그인 실패", JOptionPane.ERROR_MESSAGE);
-    	            return;
-    	        }
-
-    	        // 로그인 성공 시
-    	        this.dispose();
-    	        lobbyFrame.setVisible(true);
-
-    	    } catch (IOException ex) {
-    	        ex.printStackTrace();
-    	        JOptionPane.showMessageDialog(null, "서버와의 연결에 문제가 발생했습니다.", "오류", JOptionPane.ERROR_MESSAGE);
-    	    }
+    	    
+    	    System.out.println("[로그인] 요청 전송: " + id);
+    	    
+    	    // 로그인 성공 시 MessageReceiver가 LobbyFrame을 표시
+    	    this.dispose();
+    	    lobbyFrame.setVisible(true);
     	}
         if (e.getSource() == joinBtn) {
             new JoinFrame();
