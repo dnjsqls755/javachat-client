@@ -67,6 +67,13 @@ public class ChatRoomListPanel extends JPanel {
 
         @Override
         public void mouseClicked(MouseEvent e) {
+            // 로그인 확인
+            if (Application.me == null || Application.me.getId() == null) {
+                JOptionPane.showMessageDialog(null,
+                        "로그인이 필요합니다.", "알림", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
             if (Application.chatPanelMap.containsKey(chatRoomName)) {
                 JOptionPane.showMessageDialog(null,
                         "이미 열려있는 채팅방입니다.", "Message", JOptionPane.ERROR_MESSAGE);

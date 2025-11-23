@@ -97,6 +97,17 @@ public class ChatPanel extends JPanel implements ActionListener {
             e.printStackTrace();
         }
     }
+
+    // 기존 저장된 기록(과거 시간 포함)을 추가하기 위한 메서드
+    public void addHistoryMessage(String userName, String message, String time) {
+        try {
+            boolean isMyMessage = Application.me != null && userName.equals(Application.me.getNickName());
+            addChatMessage(userName, message, time, isMyMessage);
+            chatTextPane.setCaretPosition(doc.getLength());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
     
     private void addSystemMessage(String message) throws BadLocationException {
         SimpleAttributeSet attrs = new SimpleAttributeSet();

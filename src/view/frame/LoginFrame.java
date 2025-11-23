@@ -19,6 +19,8 @@ import java.util.Locale;
 
 public class LoginFrame extends JFrame implements ActionListener {
     LobbyFrame lobbyFrame;
+    JLabel titleLabel = new JLabel("채팅 로그인");
+    JLabel infoLabel = new JLabel("로그인 후 채팅방에 접속할 수 있습니다.");
     JLabel idLabel = new JLabel("아이디 ");
     JLabel pwLabel = new JLabel("비밀번호");
     JTextField idTextF = new JTextField(20);
@@ -58,31 +60,42 @@ public class LoginFrame extends JFrame implements ActionListener {
         this.lobbyFrame = lobbyFrame;
         setLayout(null);
 
+        // 타이틀
+        titleLabel.setBounds(100, 10, 400, 30);
+        titleLabel.setFont(new Font("맑은 고딕", Font.BOLD, 20));
+        add(titleLabel);
+        
+        // 안내 문구
+        infoLabel.setBounds(100, 35, 400, 20);
+        infoLabel.setFont(new Font("맑은 고딕", Font.PLAIN, 11));
+        infoLabel.setForeground(new Color(100, 100, 100));
+        add(infoLabel);
+
         // 아이디 & 비밀번호
-        idLabel.setBounds(100, 50, 100, 50);
+        idLabel.setBounds(100, 70, 100, 50);
         add(idLabel);
-        idTextF.setBounds(200, 50, 300, 50);
+        idTextF.setBounds(200, 70, 300, 50);
         add(idTextF);
 
-        pwLabel.setBounds(100, 120, 100, 50);
+        pwLabel.setBounds(100, 130, 100, 50);
         add(pwLabel);
-        pwTextF.setBounds(200, 120, 300, 50);
+        pwTextF.setBounds(200, 130, 300, 50);
         add(pwTextF);
 
+        // 도시 선택 콤보박스
+        cityLabel.setBounds(100, 190, 100, 50);
+        cityComboBox.setBounds(200, 190, 300, 50);
+        add(cityLabel);
+        add(cityComboBox);
+        
         // 로그인 & 회원가입 버튼
-        loginBtn.setBounds(150, 280, 140, 50);
+        loginBtn.setBounds(150, 260, 140, 50);
         loginBtn.addActionListener(this);
         add(loginBtn);
 
-        joinBtn.setBounds(310, 280, 140, 50);
+        joinBtn.setBounds(310, 260, 140, 50);
         joinBtn.addActionListener(this);
         add(joinBtn);
-
-        // 도시 선택 콤보박스
-        cityLabel.setBounds(100, 180, 100, 50);
-        cityComboBox.setBounds(200, 180, 300, 50);
-        add(cityLabel);
-        add(cityComboBox);
 
         // 날짜 배지
         dateBadgeLabel.setBounds(520, 10, 64, 64);

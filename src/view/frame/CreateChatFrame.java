@@ -46,10 +46,25 @@ public class CreateChatFrame extends JFrame {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            String chatRoomName = chatNameTextF.getText();
+            String chatRoomName = chatNameTextF.getText().trim();
+            
+            // 로그인 확인
+            if (Application.me == null || Application.me.getId() == null) {
+                JOptionPane.showMessageDialog(null,
+                        "로그인이 필요합니다.", "알림", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
             if (chatRoomName.isEmpty()) {
                 JOptionPane.showMessageDialog(null,
-                        "chat room name is not empty.", "Message", JOptionPane.ERROR_MESSAGE);
+                        "채팅방 이름을 입력해주세요.", "알림", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            
+            // 로비 이름 사용 금지
+            if ("Lobby".equalsIgnoreCase(chatRoomName)) {
+                JOptionPane.showMessageDialog(null,
+                        "사용할 수 없는 채팅방 이름입니다.", "알림", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
@@ -58,7 +73,7 @@ public class CreateChatFrame extends JFrame {
 
             ChatFrame chatFrame = new ChatFrame(chatRoomName);
 
-            Application.chatPanelMap.put(chatRoomName, chatFrame.chatPanel); // 채팅방 화면 관리
+            Application.chatPanelMap.put(chatRoomName, chatFrame.chatPanel);
             Application.chatRoomUserListPanelMap.put(chatRoomName, chatFrame.chatRoomUserListPanel);
         }
     }

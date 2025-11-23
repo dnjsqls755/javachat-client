@@ -38,6 +38,9 @@ public class ChatRoomUserListPanel extends JPanel {
             labelPanel.add(new Label(user.getNickName()));
         }
 
+        labelPanel.revalidate();
+        labelPanel.repaint();
         revalidate();
+        repaint();
     }
 }

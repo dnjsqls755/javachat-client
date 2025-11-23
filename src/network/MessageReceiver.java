@@ -163,6 +163,19 @@ public class MessageReceiver extends Thread {
                     LobbyFrame.chatRoomListPanel.paintChatRoomList();
                 }
                 break;
+
+            case CHAT_HISTORY:
+                ChatHistoryResponse historyRes = new ChatHistoryResponse(message);
+                var historyPanel = Application.chatPanelMap.get(historyRes.getChatRoomName());
+                if (historyPanel != null) {
+                    for (ChatHistoryResponse.HistoryEntry entry : historyRes.getEntries()) {
+                        historyPanel.addHistoryMessage(entry.nickname, entry.content, entry.time);
+                    }
+                    System.out.println("[CHAT_HISTORY] 이전 대화 로드 완료: " + historyRes.getChatRoomName() + " (" + historyRes.getEntries().size() + "개)");
+                } else {
+                    System.out.println("[WARNING] 히스토리 패널을 찾을 수 없음: " + historyRes.getChatRoomName());
+                }
+                break;
                 
             case ID_OK:
             case ID_DUPLICATE:

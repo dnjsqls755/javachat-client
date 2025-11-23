@@ -46,6 +46,13 @@ public class MenuPanel extends JPanel {
                 // 로그아웃 요청 전송
                 Application.sender.sendMessage(new LogoutRequest(Application.me.getId()));
                 
+                try {
+                    // 서버가 응답을 처리할 시간을 줌
+                    Thread.sleep(200);
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+                
                 // 로비 프레임 숨기기
                 if (frame instanceof LobbyFrame) {
                     frame.setVisible(false);
@@ -55,7 +62,20 @@ public class MenuPanel extends JPanel {
                     Application.chatRoomUserListPanelMap.clear();
                     Application.users.clear();
                     Application.chatRooms.clear();
+                    
+                    // 소켓 닫기 전에 사용자 ID 저장
+                    String userId = Application.me.getId();
                     Application.me = null;
+                    
+                    // 소켓 연결 종료
+                    try {
+                        if (Application.socket != null && !Application.socket.isClosed()) {
+                            Application.socket.close();
+                            System.out.println("[LOGOUT] 소켓 연결 종료: " + userId);
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
                     
                     // 로그인 화면 다시 표시
                     new view.frame.LoginFrame((LobbyFrame)frame);
