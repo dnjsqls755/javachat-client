@@ -89,13 +89,13 @@ public class MessageReceiver extends Thread {
         switch (type) {
             case LOGIN_FAIL:
                 if (Application.loginFrame != null) {
-                    SwingUtilities.invokeLater(() -> Application.loginFrame.handleLoginFailure("??? ?? ????? ???? ????."));
+                    SwingUtilities.invokeLater(() -> Application.loginFrame.handleLoginFailure("아이디 또는 비밀번호가 잘못되었습니다."));
                 }
                 break;
 
             case LOGIN_BANNED:
                 if (Application.loginFrame != null) {
-                    SwingUtilities.invokeLater(() -> Application.loginFrame.handleLoginFailure("??? ???? ???? ? ????."));
+                    SwingUtilities.invokeLater(() -> Application.loginFrame.handleLoginFailure("관리자에 의해 차단된 계정입니다."));
                 }
                 break;
 

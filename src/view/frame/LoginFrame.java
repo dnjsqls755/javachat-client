@@ -328,11 +328,11 @@ public LoginFrame(LobbyFrame lobbyFrame) {
                 return;
             }
             if (id.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "???? ??????.", "??? ??", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "아이디를 입력하세요.", "입력 오류", JOptionPane.ERROR_MESSAGE);
                 return;
             }
             if (pw.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "????? ??????.", "??? ??", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "비밀번호를 입력하세요.", "입력 오류", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
@@ -340,7 +340,7 @@ public LoginFrame(LobbyFrame lobbyFrame) {
             Application.sender.sendMessage(new LoginRequest(id, pw));
             loggingIn = true;
             loginButton.setEnabled(false);
-            loginButton.setText("??? ?..");
+            loginButton.setText("로그인 중..");
         }
 
         if (e.getSource() == joinLink) {
@@ -353,8 +353,8 @@ public LoginFrame(LobbyFrame lobbyFrame) {
     public void handleLoginFailure(String message) {
         loggingIn = false;
         loginButton.setEnabled(true);
-        loginButton.setText("???");
-        JOptionPane.showMessageDialog(this, message, "??? ??", JOptionPane.ERROR_MESSAGE);
+        loginButton.setText("로그인");
+        JOptionPane.showMessageDialog(this, message, "로그인 실패", JOptionPane.ERROR_MESSAGE);
     }
 
 }
