@@ -330,24 +330,45 @@ public class MessageReceiver extends Thread {
             case FRIEND_CHAT_INVITE:
                 FriendChatInviteResponse inviteRes = new FriendChatInviteResponse(message);
                 if (Application.me != null) {
-                    if (Application.chatRooms.stream().noneMatch(r -> r.getName().equals(inviteRes.getRoomName()))) {
-                        Application.chatRooms.add(new ChatRoom(inviteRes.getRoomName()));
-                        if (LobbyFrame.chatRoomListPanel != null) {
-                            LobbyFrame.chatRoomListPanel.addChatRoom(inviteRes.getRoomName());
+                    SwingUtilities.invokeLater(() -> {
+                        int choice = JOptionPane.showConfirmDialog(
+                                null,
+                                inviteRes.getInviterNickname() + "님의 1:1 채팅 초대를 수락하시겠습니까?",
+                                "채팅 초대",
+                                JOptionPane.YES_NO_OPTION,
+                                JOptionPane.QUESTION_MESSAGE
+                        );
+
+                        if (choice == JOptionPane.YES_OPTION) {
+                            // 수락: 채팅방 생성/열기 및 입장 요청
+                            if (Application.chatRooms.stream().noneMatch(r -> r.getName().equals(inviteRes.getRoomName()))) {
+                                Application.chatRooms.add(new ChatRoom(inviteRes.getRoomName()));
+                                if (LobbyFrame.chatRoomListPanel != null) {
+                                    LobbyFrame.chatRoomListPanel.addChatRoom(inviteRes.getRoomName());
+                                }
+                            }
+                            if (!Application.chatPanelMap.containsKey(inviteRes.getRoomName())) {
+                                ChatFrame chatFrame = new ChatFrame(inviteRes.getRoomName());
+                                Application.chatFrameMap.put(inviteRes.getRoomName(), chatFrame);
+                                Application.chatPanelMap.put(inviteRes.getRoomName(), chatFrame.getChatPanel());
+                                Application.chatRoomUserListPanelMap.put(inviteRes.getRoomName(), chatFrame.getChatRoomUserListPanel());
+                            }
+                            Application.sender.sendRaw("FRIEND_CHAT_INVITE_ACCEPT:" + inviteRes.getRoomName() + "|" + Application.me.getId());
+                            Application.sender.sendMessage(new EnterChatRequest(inviteRes.getRoomName(), Application.me.getId()));
+                        } else {
+                            // 거절: 서버에 거절 통보
+                            Application.sender.sendRaw("FRIEND_CHAT_INVITE_DECLINE:" + inviteRes.getRoomName() + "|" + Application.me.getId());
                         }
-                    }
-                    if (!Application.chatPanelMap.containsKey(inviteRes.getRoomName())) {
-                                                ChatFrame chatFrame = new ChatFrame(inviteRes.getRoomName());
-                        Application.chatFrameMap.put(inviteRes.getRoomName(), chatFrame);
-                        Application.chatPanelMap.put(inviteRes.getRoomName(), chatFrame.getChatPanel());
-                        Application.chatRoomUserListPanelMap.put(inviteRes.getRoomName(), chatFrame.getChatRoomUserListPanel());
-                    }
-                    Application.sender.sendMessage(new EnterChatRequest(inviteRes.getRoomName(), Application.me.getId()));
-                    SwingUtilities.invokeLater(() ->
-                            JOptionPane.showMessageDialog(null,
-                                    inviteRes.getInviterNickname() + "님이 1:1 채팅을 시작했습니다.",
-                                    "채팅 초대", JOptionPane.INFORMATION_MESSAGE));
+                    });
                 }
+                break;
+
+            case FRIEND_CHAT_INVITE_RESULT:
+                FriendOperationResponse inviteResult = new FriendOperationResponse(message);
+                SwingUtilities.invokeLater(() ->
+                        JOptionPane.showMessageDialog(null, inviteResult.getMessage(), inviteResult.isSuccess() ? "알림" : "알림",
+                                JOptionPane.INFORMATION_MESSAGE)
+                );
                 break;
 
             case ID_OK:

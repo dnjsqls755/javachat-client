@@ -59,4 +59,14 @@ public class MessageSender {
         }
 
     }
+
+    public void sendRaw(String line) {
+        try {
+            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+            writer.println(line);
+            writer.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
