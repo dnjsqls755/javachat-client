@@ -36,6 +36,20 @@ public class MessageSender {
                 case MESSAGE:
                     writer.println((MessageRequest) dto);
                     break;
+                case FRIEND_ADD:
+                    writer.println((FriendAddRequest) dto);
+                    break;
+                case FRIEND_REMOVE:
+                    writer.println((FriendRemoveRequest) dto);
+                    break;
+                case FRIEND_CHAT_START:
+                    writer.println((FriendChatStartRequest) dto);
+                    break;
+                case PROFILE_UPDATE:
+                    writer.println((ProfileUpdateRequest) dto);
+                    break;
+                default:
+                    writer.println(dto);
             }
 
             writer.flush();
@@ -46,4 +60,3 @@ public class MessageSender {
 
     }
 }
-
