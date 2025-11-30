@@ -75,16 +75,28 @@ public class FriendListPanel extends JPanel {
     }
 
     private JComponent buildBody() {
-        JPanel body = new JPanel();
+        JPanel body = new JPanel(new BorderLayout());
         body.setOpaque(false);
-        body.setLayout(new BoxLayout(body, BoxLayout.Y_AXIS));
         body.setBorder(BorderFactory.createEmptyBorder(0, 12, 12, 12));
 
-        body.add(buildProfileCard());
-        body.add(Box.createVerticalStrut(10));
-        body.add(buildSearchRow());
-        body.add(Box.createVerticalStrut(8));
-        body.add(buildListContainer());
+        JPanel topSection = new JPanel();
+        topSection.setOpaque(false);
+        topSection.setLayout(new BoxLayout(topSection, BoxLayout.Y_AXIS));
+        
+        topSection.add(buildProfileCard());
+        topSection.add(Box.createVerticalStrut(10));
+        
+        JPanel searchRowWrapper = new JPanel(new BorderLayout());
+        searchRowWrapper.setOpaque(false);
+        searchRowWrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, 45));
+        searchRowWrapper.setPreferredSize(new Dimension(0, 45));
+        searchRowWrapper.add(buildSearchRow(), BorderLayout.CENTER);
+        topSection.add(searchRowWrapper);
+        
+        topSection.add(Box.createVerticalStrut(8));
+
+        body.add(topSection, BorderLayout.NORTH);
+        body.add(buildListContainer(), BorderLayout.CENTER);
         return body;
     }
 
@@ -135,9 +147,6 @@ public class FriendListPanel extends JPanel {
         
         JPanel searchWrapper = new JPanel(new BorderLayout());
         searchWrapper.setBackground(Color.WHITE);
-        searchWrapper.setPreferredSize(new Dimension(220, 38));
-        searchWrapper.setMinimumSize(new Dimension(220, 38));
-        searchWrapper.setMaximumSize(new Dimension(220, 38));
         searchWrapper.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(232, 232, 232)),
                 BorderFactory.createEmptyBorder(8, 10, 8, 10)
