@@ -56,14 +56,16 @@ public class MessageReceiver extends Thread {
                     System.exit(1);
                 }
                 System.out.println(str);
-                String[] token = str.split(":");
+                int sep = str.indexOf(':');
+                String typeToken = sep >= 0 ? str.substring(0, sep) : str;
+                String payload = sep >= 0 ? str.substring(sep + 1) : "";
 
                 try {
-                    DtoType type = DtoType.valueOf(token[0]);
-                    String message = token.length > 1 ? token[1] : "";
+                    DtoType type = DtoType.valueOf(typeToken);
+                    String message = payload;
                     processReceivedMessage(type, message);
                 } catch (IllegalArgumentException e) {
-                    System.out.println("알 수 없는 DtoType: " + token[0]);
+                    System.out.println("알 수 없는 DtoType: " + typeToken);
                 }
 
                 Thread.sleep(300);
@@ -238,15 +240,62 @@ public class MessageReceiver extends Thread {
 
             case CHAT_HISTORY:
                 ChatHistoryResponse historyRes = new ChatHistoryResponse(message);
-                ChatPanel historyPanel = Application.chatPanelMap.get(historyRes.getChatRoomName());
-                if (historyPanel != null) {
-                    for (ChatHistoryResponse.HistoryEntry entry : historyRes.getEntries()) {
-                        historyPanel.addHistoryMessage(entry.nickname, entry.content, entry.time);
+                final String roomName = historyRes.getChatRoomName();
+                final java.util.List<ChatHistoryResponse.HistoryEntry> entries = historyRes.getEntries();
+                
+                System.out.println("[CHAT_HISTORY] 히스토리 수신: " + roomName + " (" + entries.size() + "개)");
+                
+                // UI 스레드에서 안전하게 실행
+                SwingUtilities.invokeLater(() -> {
+                    ChatPanel historyPanel = Application.chatPanelMap.get(roomName);
+                    if (historyPanel != null) {
+                        // 패널이 이미 존재하면 바로 추가
+                        for (ChatHistoryResponse.HistoryEntry entry : entries) {
+                            historyPanel.addHistoryMessage(entry.nickname, entry.content, entry.time);
+                        }
+                        System.out.println("[CHAT_HISTORY] 이전 대화 로드 완료: " + roomName + " (" + entries.size() + "개)");
+                    } else {
+                        // 패널이 없으면 즉시 생성 후 적용 (레이스 방지)
+                        System.out.println("[CHAT_HISTORY] 패널이 없어 자동 생성: " + roomName);
+                        if (!Application.chatPanelMap.containsKey(roomName)) {
+                            ChatFrame chatFrame = new ChatFrame(roomName);
+                            Application.chatFrameMap.put(roomName, chatFrame);
+                            Application.chatPanelMap.put(roomName, chatFrame.getChatPanel());
+                            Application.chatRoomUserListPanelMap.put(roomName, chatFrame.getChatRoomUserListPanel());
+                        }
+                        ChatPanel createdPanel = Application.chatPanelMap.get(roomName);
+                        if (createdPanel != null) {
+                            for (ChatHistoryResponse.HistoryEntry entry : entries) {
+                                createdPanel.addHistoryMessage(entry.nickname, entry.content, entry.time);
+                            }
+                            System.out.println("[CHAT_HISTORY] 자동 생성 후 로드 완료: " + roomName + " (" + entries.size() + "개)");
+                        } else {
+                            // 최후의 보루로 재시도 기간 연장
+                            new Thread(() -> {
+                                for (int retries = 0; retries < 50; retries++) { // 최대 2.5초 대기
+                                    try {
+                                        Thread.sleep(50);
+                                        ChatPanel panel = Application.chatPanelMap.get(roomName);
+                                        if (panel != null) {
+                                            final ChatPanel finalPanel = panel;
+                                            SwingUtilities.invokeLater(() -> {
+                                                for (ChatHistoryResponse.HistoryEntry entry : entries) {
+                                                    finalPanel.addHistoryMessage(entry.nickname, entry.content, entry.time);
+                                                }
+                                                System.out.println("[CHAT_HISTORY] 지연 로드 완료: " + roomName + " (" + entries.size() + "개)");
+                                            });
+                                            return;
+                                        }
+                                    } catch (InterruptedException e) {
+                                        e.printStackTrace();
+                                        break;
+                                    }
+                                }
+                                System.err.println("[ERROR] 패널을 찾을 수 없음 (타임아웃): " + roomName);
+                            }).start();
+                        }
                     }
-                    System.out.println("[CHAT_HISTORY] 이전 대화 로드 완료: " + historyRes.getChatRoomName() + " (" + historyRes.getEntries().size() + ")");
-                } else {
-                    System.out.println("[WARNING] 히스토리 패널을 찾을 수 없음: " + historyRes.getChatRoomName());
-                }
+                });
                 break;
 
             case FRIEND_LIST:

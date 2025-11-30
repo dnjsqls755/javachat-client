@@ -22,7 +22,7 @@ import javax.swing.SwingUtilities;
 
 public class AdminFrame extends JFrame implements ActionListener {
 
-    private final DefaultTableModel userModel = new DefaultTableModel(new Object[]{"ID", "Nickname", "Role", "Online", "Banned"}, 0) {
+    private final DefaultTableModel userModel = new DefaultTableModel(new Object[]{"아이디", "닉네임", "역할", "접속중", "차단됨"}, 0) {
         @Override
         public boolean isCellEditable(int row, int column) { return false; }
 
@@ -35,13 +35,13 @@ public class AdminFrame extends JFrame implements ActionListener {
     private final JTable userTable = new JTable(userModel);
     private final JTextField forceRoomField = new JTextField(12);
 
-    private final DefaultTableModel roomModel = new DefaultTableModel(new Object[]{"Room", "Members"}, 0) {
+    private final DefaultTableModel roomModel = new DefaultTableModel(new Object[]{"채팅방", "인원"}, 0) {
         @Override
         public boolean isCellEditable(int row, int column) { return false; }
     };
     private final JTable roomTable = new JTable(roomModel);
 
-    private final DefaultTableModel messageModel = new DefaultTableModel(new Object[]{"ID", "Room", "Nickname", "Content", "Sent At"}, 0) {
+    private final DefaultTableModel messageModel = new DefaultTableModel(new Object[]{"메시지ID", "채팅방", "닉네임", "내용", "전송시간"}, 0) {
         @Override
         public boolean isCellEditable(int row, int column) { return false; }
 
@@ -55,16 +55,16 @@ public class AdminFrame extends JFrame implements ActionListener {
     private final JTextField searchRoomField = new JTextField(12);
 
     public AdminFrame() {
-        super("Admin Dashboard");
+        super("관리자 대시보드");
         setSize(920, 720);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
         JTabbedPane tabs = new JTabbedPane();
-        tabs.addTab("Users", buildUserPanel());
-        tabs.addTab("Rooms", buildRoomPanel());
-        tabs.addTab("Messages", buildMessagePanel());
+        tabs.addTab("사용자 관리", buildUserPanel());
+        tabs.addTab("채팅방 관리", buildRoomPanel());
+        tabs.addTab("메시지 관리", buildMessagePanel());
 
         add(tabs, BorderLayout.CENTER);
     }
@@ -78,14 +78,14 @@ public class AdminFrame extends JFrame implements ActionListener {
         panel.add(scroll, BorderLayout.CENTER);
 
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
-        JButton refreshBtn = new JButton("Refresh");
-        JButton logoutBtn = new JButton("Force Logout");
-        JButton banBtn = new JButton("Toggle Ban");
-        JButton forceExitBtn = new JButton("Force Exit");
+        JButton refreshBtn = new JButton("새로고침");
+        JButton logoutBtn = new JButton("강제 로그아웃");
+        JButton banBtn = new JButton("차단/해제");
+        JButton forceExitBtn = new JButton("강제 퇴장");
         controls.add(refreshBtn);
         controls.add(logoutBtn);
         controls.add(banBtn);
-        controls.add(new JLabel("Room"));
+        controls.add(new JLabel("채팅방:"));
         controls.add(forceRoomField);
         controls.add(forceExitBtn);
 
@@ -112,8 +112,8 @@ public class AdminFrame extends JFrame implements ActionListener {
         panel.add(scroll, BorderLayout.CENTER);
 
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
-        JButton refreshBtn = new JButton("Refresh");
-        JButton deleteBtn = new JButton("Delete Room");
+        JButton refreshBtn = new JButton("새로고침");
+        JButton deleteBtn = new JButton("채팅방 삭제");
         refreshBtn.setActionCommand("refresh_rooms");
         deleteBtn.setActionCommand("delete_room");
         refreshBtn.addActionListener(this);
@@ -134,12 +134,12 @@ public class AdminFrame extends JFrame implements ActionListener {
         panel.add(scroll, BorderLayout.CENTER);
 
         JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
-        filters.add(new JLabel("Nickname"));
+        filters.add(new JLabel("닉네임:"));
         filters.add(searchNicknameField);
-        filters.add(new JLabel("Room"));
+        filters.add(new JLabel("채팅방:"));
         filters.add(searchRoomField);
-        JButton searchBtn = new JButton("Search");
-        JButton deleteBtn = new JButton("Delete");
+        JButton searchBtn = new JButton("검색");
+        JButton deleteBtn = new JButton("메시지 삭제");
         searchBtn.setActionCommand("search_messages");
         deleteBtn.setActionCommand("delete_message");
         searchBtn.addActionListener(this);
@@ -172,7 +172,7 @@ public class AdminFrame extends JFrame implements ActionListener {
                     boolean banned = Boolean.TRUE.equals(userModel.getValueAt(row, 4));
                     Application.sender.sendMessage(new AdminBanRequest(targetId, !banned));
                 } else {
-                    showWarning("Select a user first.");
+                    showWarning("먼저 사용자를 선택하세요.");
                 }
                 break;
             case "force_exit":
@@ -180,7 +180,7 @@ public class AdminFrame extends JFrame implements ActionListener {
                 if (selectedUser == null) break;
                 String roomName = forceRoomField.getText().trim();
                 if (roomName.isEmpty()) {
-                    showWarning("Enter a room name.");
+                    showWarning("채팅방 이름을 입력하세요.");
                     break;
                 }
                 Application.sender.sendMessage(new AdminForceExitRequest(selectedUser, roomName));
@@ -189,12 +189,12 @@ public class AdminFrame extends JFrame implements ActionListener {
                 int roomRow = roomTable.getSelectedRow();
                 if (roomRow >= 0) {
                     String room = roomModel.getValueAt(roomRow, 0).toString();
-                    int confirm = JOptionPane.showConfirmDialog(this, "Delete room \"" + room + "\"?", "Confirm", JOptionPane.YES_NO_OPTION);
+                    int confirm = JOptionPane.showConfirmDialog(this, "\"" + room + "\" 채팅방을 삭제하시겠습니까?", "확인", JOptionPane.YES_NO_OPTION);
                     if (confirm == JOptionPane.YES_OPTION) {
                         Application.sender.sendMessage(new AdminRoomDeleteRequest(room));
                     }
                 } else {
-                    showWarning("Select a room first.");
+                    showWarning("먼저 채팅방을 선택하세요.");
                 }
                 break;
             case "search_messages":
@@ -208,12 +208,22 @@ public class AdminFrame extends JFrame implements ActionListener {
                 if (msgRow >= 0) {
                     Object idObj = messageModel.getValueAt(msgRow, 0);
                     long msgId = (idObj instanceof Number) ? ((Number) idObj).longValue() : Long.parseLong(idObj.toString());
-                    int confirm = JOptionPane.showConfirmDialog(this, "Delete message " + msgId + "?", "Confirm", JOptionPane.YES_NO_OPTION);
+                    int confirm = JOptionPane.showConfirmDialog(this, "메시지 ID " + msgId + "를 삭제하시겠습니까?", "확인", JOptionPane.YES_NO_OPTION);
                     if (confirm == JOptionPane.YES_OPTION) {
                         Application.sender.sendMessage(new AdminMessageDeleteRequest(msgId));
+                        // 삭제 후 자동으로 검색 결과 새로고침
+                        new java.util.Timer().schedule(new java.util.TimerTask() {
+                            @Override
+                            public void run() {
+                                Application.sender.sendMessage(new AdminMessageSearchRequest(
+                                    searchNicknameField.getText().trim(),
+                                    searchRoomField.getText().trim()
+                                ));
+                            }
+                        }, 500);
                     }
                 } else {
-                    showWarning("Select a message first.");
+                    showWarning("먼저 메시지를 선택하세요.");
                 }
                 break;
             default:
@@ -224,14 +234,14 @@ public class AdminFrame extends JFrame implements ActionListener {
     private String getSelectedUserId() {
         int row = userTable.getSelectedRow();
         if (row < 0) {
-            showWarning("Select a user first.");
+            showWarning("먼저 사용자를 선택하세요.");
             return null;
         }
         return userModel.getValueAt(row, 0).toString();
     }
 
     private void showWarning(String message) {
-        JOptionPane.showMessageDialog(this, message, "Notice", JOptionPane.WARNING_MESSAGE);
+        JOptionPane.showMessageDialog(this, message, "알림", JOptionPane.WARNING_MESSAGE);
     }
 
     public void updateUsers(List<User> users) {

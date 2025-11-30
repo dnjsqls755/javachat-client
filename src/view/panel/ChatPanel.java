@@ -50,13 +50,23 @@ public class ChatPanel extends JPanel implements ActionListener {
         add(scrPane);
 
         // 메시지 입력 필드
-        msgTextF.setBounds(10, 450, 280, 40);
+        msgTextF.setBounds(10, 450, 230, 40);
         msgTextF.setFont(new Font("맑은 고딕", Font.PLAIN, 13));
         msgTextF.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
             BorderFactory.createEmptyBorder(5, 10, 5, 10)
         ));
         add(msgTextF);
+
+        // 이모티콘 버튼
+        JButton emojiBtn = new JButton("😀");
+        emojiBtn.setBounds(250, 450, 40, 40);
+        emojiBtn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
+        emojiBtn.setBackground(Color.WHITE);
+        emojiBtn.setBorderPainted(true);
+        emojiBtn.setFocusPainted(false);
+        emojiBtn.addActionListener(e -> showEmojiPicker());
+        add(emojiBtn);
 
         // 전송 버튼
         sendBtn.setBounds(300, 450, 90, 40);
@@ -174,5 +184,41 @@ public class ChatPanel extends JPanel implements ActionListener {
         }
         msgTextF.setText("");
         msgTextF.requestFocus();
+    }
+
+    private void showEmojiPicker() {
+        String[][] emojiData = {
+            {"😀", "웃는 얼굴"}, {"😂", "기쁨의 눈물"}, {"😍", "하트 눈"}, {"😢", "우는 얼굴"}, {"😡", "화난 얼굴"}, {"😎", "멋진 얼굴"},
+            {"😱", "비명"}, {"😊", "행복"}, {"😉", "윙크"}, {"😭", "대성통곡"}, {"😘", "키스"}, {"😐", "무표정"},
+            {"❤️", "하트"}, {"👍", "좋아요"}, {"👎", "싫어요"}, {"👏", "박수"}, {"🙏", "기도"}, {"🎉", "축하"},
+            {"🎂", "케이크"}, {"🎁", "선물"}, {"⭐", "별"}, {"💩", "똥"}, {"🐶", "강아지"}, {"🐱", "고양이"}
+        };
+        
+        JPanel emojiPanel = new JPanel(new GridLayout(4, 6, 5, 5));
+        emojiPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        
+        for (String[] emojiInfo : emojiData) {
+            String emoji = emojiInfo[0];
+            String tooltip = emojiInfo[1];
+            JButton btn = new JButton(emoji);
+            btn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+            btn.setPreferredSize(new Dimension(50, 50));
+            btn.setFocusPainted(false);
+            btn.setToolTipText(tooltip);
+            btn.addActionListener(e -> {
+                String nickname = Application.me.getNickName();
+                if (nickname != null && !nickname.isEmpty()) {
+                    Application.sender.sendMessage(new MessageRequest(MessageType.CHAT, chatRoomName, nickname, emoji));
+                    SwingUtilities.getWindowAncestor(emojiPanel).dispose();
+                }
+            });
+            emojiPanel.add(btn);
+        }
+        
+        JDialog dialog = new JDialog((JFrame) SwingUtilities.getWindowAncestor(this), "이모티콘 선택", true);
+        dialog.add(emojiPanel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
     }
 }

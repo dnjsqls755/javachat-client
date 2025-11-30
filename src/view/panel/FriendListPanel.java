@@ -114,15 +114,16 @@ public class FriendListPanel extends JPanel {
         info.add(Box.createVerticalStrut(2));
         info.add(myIdLabel);
 
-        JButton multiProfileBtn = new JButton("멀티프로필 +");
-        multiProfileBtn.setFocusPainted(false);
-        multiProfileBtn.setBackground(new Color(247, 247, 247));
-        multiProfileBtn.setBorder(BorderFactory.createLineBorder(new Color(225, 225, 225)));
-        multiProfileBtn.addActionListener(e -> openMyProfileDialog());
+        JButton editProfileBtn = new JButton("프로필 수정");
+        editProfileBtn.setFocusPainted(false);
+        editProfileBtn.setBackground(new Color(247, 247, 247));
+        editProfileBtn.setBorder(BorderFactory.createLineBorder(new Color(225, 225, 225)));
+        editProfileBtn.setPreferredSize(new Dimension(90, 32));
+        editProfileBtn.addActionListener(e -> openMyProfileDialog());
 
         card.add(myAvatarLabel, BorderLayout.WEST);
         card.add(info, BorderLayout.CENTER);
-        card.add(multiProfileBtn, BorderLayout.EAST);
+        card.add(editProfileBtn, BorderLayout.EAST);
 
         updateMyProfileCard();
         return card;
@@ -131,14 +132,21 @@ public class FriendListPanel extends JPanel {
     private JComponent buildSearchRow() {
         JPanel row = new JPanel(new BorderLayout(8, 0));
         row.setOpaque(false);
+        
         JPanel searchWrapper = new JPanel(new BorderLayout());
         searchWrapper.setBackground(Color.WHITE);
+        searchWrapper.setPreferredSize(new Dimension(220, 38));
+        searchWrapper.setMinimumSize(new Dimension(220, 38));
+        searchWrapper.setMaximumSize(new Dimension(220, 38));
         searchWrapper.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(232, 232, 232)),
                 BorderFactory.createEmptyBorder(8, 10, 8, 10)
         ));
-        JLabel icon = new JLabel("\uD83D\uDD0E");
+        
+        JLabel icon = new JLabel("🔎");
         icon.setForeground(new Color(110, 110, 110));
+        icon.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 5));
+        
         searchField.setBorder(BorderFactory.createEmptyBorder());
         searchField.setOpaque(false);
         searchField.setFont(BODY_FONT);

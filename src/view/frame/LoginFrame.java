@@ -23,7 +23,6 @@ public class LoginFrame extends JFrame implements ActionListener {
     private final JTextField idField = new JTextField();
     private final JPasswordField pwField = new JPasswordField();
     private final JButton loginButton = new JButton("로그인");
-    private final JButton qrButton = new JButton("QR코드 로그인");
     private final JButton joinLink = new JButton("회원가입");
     private final JComboBox<String> cityComboBox;
     private final JLabel weatherIconLabel = new JLabel();
@@ -82,12 +81,6 @@ public LoginFrame(LobbyFrame lobbyFrame) {
         canvas.add(buildInputPanel());
         canvas.add(Box.createVerticalStrut(16));
         canvas.add(buildLoginButtons());
-        canvas.add(Box.createVerticalStrut(14));
-        canvas.add(buildDivider("또는"));
-        canvas.add(Box.createVerticalStrut(14));
-        canvas.add(buildQrButton());
-        canvas.add(Box.createVerticalStrut(16));
-        canvas.add(buildAutoLogin());
         canvas.add(Box.createVerticalGlue());
         canvas.add(buildFooterLinks());
 
@@ -176,69 +169,18 @@ public LoginFrame(LobbyFrame lobbyFrame) {
         return buttons;
     }
 
-    private JComponent buildDivider(String text) {
-        JPanel divider = new JPanel();
-        divider.setOpaque(false);
-        divider.setLayout(new BoxLayout(divider, BoxLayout.X_AXIS));
-
-        JSeparator left = new JSeparator();
-        JSeparator right = new JSeparator();
-        JLabel label = new JLabel(text);
-        label.setForeground(new Color(90, 90, 90));
-        label.setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
-
-        divider.add(left);
-        divider.add(label);
-        divider.add(right);
-        return divider;
-    }
-
-    private JPanel buildQrButton() {
-        JPanel wrapper = new JPanel();
-        wrapper.setOpaque(false);
-        wrapper.setLayout(new BoxLayout(wrapper, BoxLayout.X_AXIS));
-        styleSecondaryButton(qrButton);
-        qrButton.setHorizontalAlignment(SwingConstants.CENTER);
-        qrButton.addActionListener(this);
-        wrapper.add(qrButton);
-        return wrapper;
-    }
-
-    private JPanel buildAutoLogin() {
-        JPanel auto = new JPanel(new FlowLayout(FlowLayout.LEFT, 6, 0));
-        auto.setOpaque(false);
-        JCheckBox check = new JCheckBox("자동 로그인");
-        check.setOpaque(false);
-        check.setSelected(false);
-        check.setForeground(Color.DARK_GRAY);
-        JLabel info = new JLabel("\u2139");
-        info.setForeground(new Color(90, 90, 90));
-        auto.add(check);
-        auto.add(info);
-        return auto;
-    }
-
     private JPanel buildFooterLinks() {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
         footer.setOpaque(false);
+        footer.setBorder(BorderFactory.createEmptyBorder(0, 0, 16, 0));
 
         joinLink.setFocusPainted(false);
         joinLink.setBorderPainted(false);
         joinLink.setContentAreaFilled(false);
         joinLink.setForeground(new Color(60, 60, 60));
-        joinLink.setFont(DEFAULT_FONT.deriveFont(Font.BOLD, 12f));
+        joinLink.setFont(DEFAULT_FONT.deriveFont(Font.BOLD, 13f));
         joinLink.addActionListener(this);
 
-        JLabel findAccount = new JLabel("<html><u>카카오계정 찾기</u></html>");
-        findAccount.setForeground(new Color(60, 60, 60));
-        JLabel divider = new JLabel("|");
-        divider.setForeground(new Color(120, 120, 120));
-        JLabel resetPwd = new JLabel("<html><u>비밀번호 재설정</u></html>");
-        resetPwd.setForeground(new Color(60, 60, 60));
-
-        footer.add(findAccount);
-        footer.add(divider);
-        footer.add(resetPwd);
         footer.add(joinLink);
         return footer;
     }
@@ -398,11 +340,7 @@ public LoginFrame(LobbyFrame lobbyFrame) {
             Application.sender.sendMessage(new LoginRequest(id, pw));
             loggingIn = true;
             loginButton.setEnabled(false);
-            loginButton.setText("??? ?...");
-        }
-
-        if (e.getSource() == qrButton) {
-            JOptionPane.showMessageDialog(this, "QR?? ???? ??????.", "??", JOptionPane.INFORMATION_MESSAGE);
+            loginButton.setText("??? ?..");
         }
 
         if (e.getSource() == joinLink) {
