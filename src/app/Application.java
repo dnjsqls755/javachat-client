@@ -45,7 +45,7 @@ public class Application {
         try {
             PostcodeHttpServer.start();
 
-            socket = new Socket("172.16.28.187", 9000);
+            socket = new Socket("172.16.30.31", 9000);
             System.out.println("connect success to chat server");
 
             sender = new MessageSender(socket);
