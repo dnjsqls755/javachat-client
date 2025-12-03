@@ -10,6 +10,7 @@ public class User {
     private String role = "USER";
     private boolean online;
     private boolean banned;
+    private String statusMessage;
 
     public User(String id, String nickname) {
         this(id, nickname, "USER", false, false);
@@ -67,5 +68,13 @@ public class User {
 
     public void setBanned(boolean banned) {
         this.banned = banned;
+    }
+
+    public String getStatusMessage() {
+        return statusMessage;
+    }
+
+    public void setStatusMessage(String statusMessage) {
+        this.statusMessage = statusMessage;
     }
 }
