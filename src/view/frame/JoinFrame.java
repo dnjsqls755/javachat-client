@@ -5,6 +5,7 @@ import dto.request.JoinRequest;
 import net.sourceforge.jdatepicker.impl.JDatePanelImpl;
 import net.sourceforge.jdatepicker.impl.JDatePickerImpl;
 import net.sourceforge.jdatepicker.impl.UtilDateModel;
+import util.PostcodeHttpServer;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -17,6 +18,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.regex.Pattern;
+import java.net.URI;
 
 public class JoinFrame extends JFrame implements ActionListener {
     
@@ -76,6 +78,7 @@ public class JoinFrame extends JFrame implements ActionListener {
         super("회원가입");
         setLayout(null);
         setSize(600, 800);
+        setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         
@@ -305,11 +308,23 @@ public class JoinFrame extends JFrame implements ActionListener {
     }
     
     private void searchPostalCode() {
-        PostalCodeSearchDialog dialog = new PostalCodeSearchDialog(this);
-        String[] result = dialog.showDialog();
-        if (result != null) {
-            postalCodeField.setText(result[0]);
-            addressField.setText(result[1]);
+        try {
+            PostcodeHttpServer.start();
+            PostcodeHttpServer.setAddressCallback((postal, address) -> {
+                SwingUtilities.invokeLater(() -> {
+                    postalCodeField.setText(postal);
+                    addressField.setText(address);
+                    PostcodeHttpServer.setAddressCallback(null);
+                    PostcodeHttpServer.stop();
+                    JOptionPane.showMessageDialog(this, "주소 선택 완료", "완료", JOptionPane.INFORMATION_MESSAGE);
+                });
+            });
+
+            String url = PostcodeHttpServer.getUrl();
+            Desktop.getDesktop().browse(new URI(url));
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "우편번호 검색을 열 수 없습니다: " + ex.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+            ex.printStackTrace();
         }
     }
     

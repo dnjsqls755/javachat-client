@@ -69,6 +69,7 @@ public class PostalCodeSearchDialog extends JDialog {
             selectedPostalCode = null;
             selectedAddress = null;
             PostcodeHttpServer.setAddressCallback(null);
+            PostcodeHttpServer.stop();
             dispose();
         });
         
@@ -77,6 +78,7 @@ public class PostalCodeSearchDialog extends JDialog {
             @Override
             public void windowClosing(java.awt.event.WindowEvent e) {
                 PostcodeHttpServer.setAddressCallback(null);
+                PostcodeHttpServer.stop();
             }
         });
     }
