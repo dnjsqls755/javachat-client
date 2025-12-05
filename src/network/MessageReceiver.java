@@ -384,6 +384,55 @@ public class MessageReceiver extends Thread {
                 }
                 break;
 
+            case FIND_ID_RESULT:
+                FindIdResponse findIdResponse = new FindIdResponse(
+                    message.split(":")[0].equals("true"),
+                    message.split(":").length > 1 ? message.split(":")[1] : "",
+                    message.split(":").length > 2 ? message.split(":")[2] : ""
+                );
+                if (Application.findIdFrame != null) {
+                    SwingUtilities.invokeLater(() -> {
+                        if (findIdResponse.isSuccess()) {
+                            Application.findIdFrame.handleFindIdSuccess(findIdResponse.getUserId());
+                        } else {
+                            Application.findIdFrame.handleFindIdFailure(findIdResponse.getMessage());
+                        }
+                    });
+                }
+                break;
+
+            case FIND_PASSWORD_RESULT:
+                FindPasswordResponse findPwResponse = new FindPasswordResponse(
+                    message.split(":")[0].equals("true"),
+                    message.split(":").length > 1 ? message.split(":")[1] : ""
+                );
+                if (Application.findPasswordFrame != null) {
+                    SwingUtilities.invokeLater(() -> {
+                        if (findPwResponse.isSuccess()) {
+                            Application.findPasswordFrame.handleVerifySuccess();
+                        } else {
+                            Application.findPasswordFrame.handleVerifyFailure(findPwResponse.getMessage());
+                        }
+                    });
+                }
+                break;
+
+            case RESET_PASSWORD_RESULT:
+                ResetPasswordResponse resetPwResponse = new ResetPasswordResponse(
+                    message.split(":")[0].equals("true"),
+                    message.split(":").length > 1 ? message.split(":")[1] : ""
+                );
+                if (Application.findPasswordFrame != null) {
+                    SwingUtilities.invokeLater(() -> {
+                        if (resetPwResponse.isSuccess()) {
+                            Application.findPasswordFrame.handleResetSuccess();
+                        } else {
+                            Application.findPasswordFrame.handleResetFailure(resetPwResponse.getMessage());
+                        }
+                    });
+                }
+                break;
+
             default:
                 System.out.println("[WARNING] 처리할 수 없는 메시지 타입 " + type);
                 break;

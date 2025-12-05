@@ -24,6 +24,8 @@ public class LoginFrame extends JFrame implements ActionListener {
     private final JPasswordField pwField = new JPasswordField();
     private final JButton loginButton = new JButton("로그인");
     private final JButton joinLink = new JButton("회원가입");
+    private final JButton findIdLink = new JButton("아이디 찾기");
+    private final JButton findPasswordLink = new JButton("비밀번호 찾기");
     private final JComboBox<String> cityComboBox;
     private final JLabel weatherIconLabel = new JLabel();
     private final JLabel temperatureLabel = new JLabel("");
@@ -59,7 +61,7 @@ public LoginFrame(LobbyFrame lobbyFrame) {
         cityComboBox.setSelectedIndex(0);
         
         setTitle("Chat - Login");
-        setSize(410, 700);
+        setSize(460, 720);
         setResizable(false);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -70,18 +72,18 @@ public LoginFrame(LobbyFrame lobbyFrame) {
         JPanel canvas = new JPanel();
         canvas.setLayout(new BoxLayout(canvas, BoxLayout.Y_AXIS));
         canvas.setBackground(KAKAO_YELLOW);
-        canvas.setBorder(BorderFactory.createEmptyBorder(26, 34, 30, 34));
+        canvas.setBorder(BorderFactory.createEmptyBorder(30, 40, 25, 40));
 
         canvas.add(buildTopBar());
-        canvas.add(Box.createVerticalStrut(18));
+        canvas.add(Box.createVerticalStrut(15));
         canvas.add(buildLogo());
-        canvas.add(Box.createVerticalStrut(20));
+        canvas.add(Box.createVerticalStrut(18));
         canvas.add(buildWeatherPanel());
-        canvas.add(Box.createVerticalStrut(20));
+        canvas.add(Box.createVerticalStrut(30));
         canvas.add(buildInputPanel());
-        canvas.add(Box.createVerticalStrut(16));
+        canvas.add(Box.createVerticalStrut(20));
         canvas.add(buildLoginButtons());
-        canvas.add(Box.createVerticalGlue());
+        canvas.add(Box.createVerticalStrut(20));
         canvas.add(buildFooterLinks());
 
         root.add(canvas, BorderLayout.CENTER);
@@ -139,20 +141,22 @@ public LoginFrame(LobbyFrame lobbyFrame) {
         inputs.setOpaque(false);
         inputs.setLayout(new BoxLayout(inputs, BoxLayout.Y_AXIS));
 
-        idField.setPreferredSize(new Dimension(260, 44));
-        idField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        idField.setPreferredSize(new Dimension(320, 46));
+        idField.setMaximumSize(new Dimension(320, 46));
+        idField.setAlignmentX(Component.CENTER_ALIGNMENT);
         styleField(idField);
         idField.setToolTipText("아이디 또는 이메일을 입력하세요");
-        idField.setFont(DEFAULT_FONT);
+        idField.setFont(DEFAULT_FONT.deriveFont(14f));
 
-        pwField.setPreferredSize(new Dimension(260, 44));
-        pwField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        pwField.setPreferredSize(new Dimension(320, 46));
+        pwField.setMaximumSize(new Dimension(320, 46));
+        pwField.setAlignmentX(Component.CENTER_ALIGNMENT);
         styleField(pwField);
         pwField.setToolTipText("비밀번호를 입력하세요");
-        pwField.setFont(DEFAULT_FONT);
+        pwField.setFont(DEFAULT_FONT.deriveFont(14f));
 
         inputs.add(idField);
-        inputs.add(Box.createVerticalStrut(8));
+        inputs.add(Box.createVerticalStrut(12));
         inputs.add(pwField);
         return inputs;
     }
@@ -172,16 +176,41 @@ public LoginFrame(LobbyFrame lobbyFrame) {
     private JPanel buildFooterLinks() {
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 0));
         footer.setOpaque(false);
-        footer.setBorder(BorderFactory.createEmptyBorder(0, 0, 16, 0));
+        footer.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
         joinLink.setFocusPainted(false);
         joinLink.setBorderPainted(false);
         joinLink.setContentAreaFilled(false);
         joinLink.setForeground(new Color(60, 60, 60));
-        joinLink.setFont(DEFAULT_FONT.deriveFont(Font.BOLD, 13f));
+        joinLink.setFont(DEFAULT_FONT.deriveFont(Font.PLAIN, 12f));
         joinLink.addActionListener(this);
 
+        findIdLink.setFocusPainted(false);
+        findIdLink.setBorderPainted(false);
+        findIdLink.setContentAreaFilled(false);
+        findIdLink.setForeground(new Color(80, 80, 80));
+        findIdLink.setFont(DEFAULT_FONT.deriveFont(Font.PLAIN, 12f));
+        findIdLink.addActionListener(this);
+
+        findPasswordLink.setFocusPainted(false);
+        findPasswordLink.setBorderPainted(false);
+        findPasswordLink.setContentAreaFilled(false);
+        findPasswordLink.setForeground(new Color(80, 80, 80));
+        findPasswordLink.setFont(DEFAULT_FONT.deriveFont(Font.PLAIN, 12f));
+        findPasswordLink.addActionListener(this);
+
+        JLabel separator1 = new JLabel("|");
+        separator1.setFont(DEFAULT_FONT.deriveFont(12f));
+        separator1.setForeground(new Color(100, 100, 100));
+        JLabel separator2 = new JLabel("|");
+        separator2.setFont(DEFAULT_FONT.deriveFont(12f));
+        separator2.setForeground(new Color(100, 100, 100));
+
         footer.add(joinLink);
+        footer.add(separator1);
+        footer.add(findIdLink);
+        footer.add(separator2);
+        footer.add(findPasswordLink);
         return footer;
     }
     
@@ -194,11 +223,11 @@ public LoginFrame(LobbyFrame lobbyFrame) {
         JPanel cityPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
         cityPanel.setOpaque(false);
         JLabel cityLabel = new JLabel("도시: ");
-        cityLabel.setFont(DEFAULT_FONT.deriveFont(Font.BOLD));
+        cityLabel.setFont(DEFAULT_FONT.deriveFont(Font.BOLD, 13f));
         cityLabel.setForeground(DEEP_BROWN);
         
-        cityComboBox.setFont(DEFAULT_FONT);
-        cityComboBox.setPreferredSize(new Dimension(180, 30));
+        cityComboBox.setFont(DEFAULT_FONT.deriveFont(13f));
+        cityComboBox.setPreferredSize(new Dimension(200, 32));
         cityComboBox.setBackground(Color.WHITE);
         cityComboBox.addItemListener(new ItemListener() {
             @Override
@@ -217,7 +246,7 @@ public LoginFrame(LobbyFrame lobbyFrame) {
         weatherInfoPanel.setOpaque(false);
         
         weatherIconLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 40));
-        temperatureLabel.setFont(DEFAULT_FONT.deriveFont(Font.BOLD, 16f));
+        temperatureLabel.setFont(DEFAULT_FONT.deriveFont(Font.BOLD, 18f));
         temperatureLabel.setForeground(DEEP_BROWN);
         
         weatherInfoPanel.add(weatherIconLabel);
@@ -300,12 +329,13 @@ public LoginFrame(LobbyFrame lobbyFrame) {
 
     private void stylePrimaryButton(JButton btn) {
         btn.setAlignmentX(Component.CENTER_ALIGNMENT);
-        btn.setPreferredSize(new Dimension(260, 46));
-        btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
+        btn.setPreferredSize(new Dimension(320, 50));
+        btn.setMaximumSize(new Dimension(320, 50));
         btn.setFocusPainted(false);
         btn.setBackground(new Color(245, 245, 245));
         btn.setForeground(Color.DARK_GRAY);
         btn.setBorder(BorderFactory.createLineBorder(new Color(215, 215, 215)));
+        btn.setFont(DEFAULT_FONT.deriveFont(Font.BOLD, 15f));
     }
 
     private void styleSecondaryButton(JButton btn) {
@@ -345,6 +375,14 @@ public LoginFrame(LobbyFrame lobbyFrame) {
 
         if (e.getSource() == joinLink) {
             new JoinFrame();
+        }
+
+        if (e.getSource() == findIdLink) {
+            new FindIdFrame();
+        }
+
+        if (e.getSource() == findPasswordLink) {
+            new FindPasswordFrame();
         }
     }
 

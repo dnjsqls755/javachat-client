@@ -388,11 +388,9 @@ public class FriendListPanel extends JPanel {
         avatar.setFont(avatar.getFont().deriveFont(Font.BOLD, 28f));
         avatar.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JPanel info = new JPanel(new GridLayout(3, 1));
+        JPanel info = new JPanel(new GridLayout(2, 1));
         info.add(new JLabel("닉네임: " + friend.getNickName()));
         info.add(new JLabel("아이디: " + friend.getId()));
-        String statusMsg = friend.getStatusMessage() == null || friend.getStatusMessage().isEmpty() ? "(상태메시지 없음)" : friend.getStatusMessage();
-        info.add(new JLabel("상태메시지: " + statusMsg));
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton chatButton = new JButton("1:1 채팅");
@@ -421,36 +419,10 @@ public class FriendListPanel extends JPanel {
             return;
         }
         String currentNick = Application.me.getNickName() == null ? "" : Application.me.getNickName();
-        String currentStatus = Application.me.getStatusMessage() == null ? "" : Application.me.getStatusMessage();
-        JTextField nicknameField = new JTextField(currentNick, 15);
-        JTextField statusField = new JTextField(currentStatus, 15);
-        
-        JPanel panel = new JPanel();
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.add(new JLabel("아이디: " + Application.me.getId()));
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(new JLabel("닉네임:"));
-        panel.add(nicknameField);
-        panel.add(Box.createVerticalStrut(10));
-        panel.add(new JLabel("상태메시지:"));
-        panel.add(statusField);
-
-        int result = JOptionPane.showConfirmDialog(this, panel, "내 프로필 수정", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (result == JOptionPane.OK_OPTION) {
-            String newNick = nicknameField.getText().trim();
-            String newStatus = statusField.getText().trim();
-            if (newNick.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "닉네임을 입력하세요", "알림", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-            if (!newNick.equals(Application.me.getNickName())) {
-                Application.me.setNickName(newNick);
-                Application.sender.sendMessage(new ProfileUpdateRequest(Application.me.getId(), newNick));
-            }
-            if (!newStatus.equals(currentStatus)) {
-                Application.me.setStatusMessage(newStatus);
-                Application.sender.sendRaw("PROFILE_STATUS_UPDATE:" + Application.me.getId() + "|" + newStatus);
-            }
+        String newNick = JOptionPane.showInputDialog(this, "새 닉네임을 입력하세요", currentNick);
+        if (newNick != null && !newNick.trim().isEmpty() && !newNick.equals(Application.me.getNickName())) {
+            Application.me.setNickName(newNick);
+            Application.sender.sendMessage(new ProfileUpdateRequest(Application.me.getId(), newNick));
             updateMyProfileCard();
         }
     }
@@ -511,8 +483,7 @@ public class FriendListPanel extends JPanel {
                 avatar.setText("?");
             }
             name.setText(value != null ? value.getNickName() : "");
-            String statusMsg = value != null ? value.getStatusMessage() : null;
-            status.setText(statusMsg == null || statusMsg.isEmpty() ? (value != null ? "아이디: " + value.getId() : "") : statusMsg);
+            status.setText(value != null ? "아이디: " + value.getId() : "");
 
             if (isSelected) {
                 setBackground(new Color(249, 247, 240));

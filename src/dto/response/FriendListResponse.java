@@ -12,14 +12,15 @@ public class FriendListResponse {
         if (message == null || message.isEmpty()) {
             return;
         }
-        String[] userValues = message.split("\\|");
+        String[] userValues = message.split("\\\\|");
         for (String value : userValues) {
             if (value.isEmpty()) {
                 continue;
             }
             String[] pieces = value.split(",");
             if (pieces.length >= 2) {
-                friends.add(new User(pieces[0], pieces[1]));
+                User u = new User(pieces[0], pieces[1]);
+                friends.add(u);
             }
         }
     }

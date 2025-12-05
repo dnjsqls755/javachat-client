@@ -14,6 +14,8 @@ import view.frame.AdminFrame;
 import view.frame.LobbyFrame;
 import view.frame.LoginFrame;
 import view.frame.ChatFrame;
+import view.frame.FindIdFrame;
+import view.frame.FindPasswordFrame;
 import view.panel.ChatPanel;
 import view.panel.ChatRoomUserListPanel;
 
@@ -28,6 +30,8 @@ public class Application {
     public static LobbyFrame lobbyFrame;
     public static LoginFrame loginFrame;
     public static AdminFrame adminFrame;
+    public static FindIdFrame findIdFrame;
+    public static FindPasswordFrame findPasswordFrame;
 
     public static User me;
 
@@ -45,7 +49,7 @@ public class Application {
         try {
             PostcodeHttpServer.start();
 
-            socket = new Socket("172.16.30.31", 9000);
+            socket = new Socket("172.16.28.103", 9000);
             System.out.println("connect success to chat server");
 
             sender = new MessageSender(socket);
