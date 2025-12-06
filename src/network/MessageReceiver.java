@@ -197,6 +197,17 @@ public class MessageReceiver extends Thread {
                                 adminAction.isSuccess() ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE));
                 break;
 
+            case ADMIN_USER_INFO_RESULT:
+                AdminUserInfoResponse userInfoRes = new AdminUserInfoResponse(message);
+                if (Application.adminFrame != null) {
+                    SwingUtilities.invokeLater(() -> 
+                        Application.adminFrame.showUserInfoDialog(
+                            userInfoRes.getUserId(), userInfoRes.getNickname(), userInfoRes.getEmail(), 
+                            userInfoRes.getPhone(), userInfoRes.getAddress(), userInfoRes.getDetailAddress(),
+                            userInfoRes.getPostalCode(), userInfoRes.getGender(), userInfoRes.getBirthDate()));
+                }
+                break;
+
             case FORCE_LOGOUT:
                 SwingUtilities.invokeLater(() -> {
                     String notice = (message == null || message.isEmpty()) ? "???? ?? ?????????." : message;

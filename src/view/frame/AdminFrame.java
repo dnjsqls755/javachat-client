@@ -79,10 +79,12 @@ public class AdminFrame extends JFrame implements ActionListener {
 
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
         JButton refreshBtn = new JButton("새로고침");
+        JButton editBtn = new JButton("정보 수정");
         JButton logoutBtn = new JButton("강제 로그아웃");
         JButton banBtn = new JButton("차단/해제");
         JButton forceExitBtn = new JButton("강제 퇴장");
         controls.add(refreshBtn);
+        controls.add(editBtn);
         controls.add(logoutBtn);
         controls.add(banBtn);
         controls.add(new JLabel("채팅방:"));
@@ -90,11 +92,13 @@ public class AdminFrame extends JFrame implements ActionListener {
         controls.add(forceExitBtn);
 
         refreshBtn.setActionCommand("refresh_users");
+        editBtn.setActionCommand("edit_user");
         logoutBtn.setActionCommand("force_logout");
         banBtn.setActionCommand("toggle_ban");
         forceExitBtn.setActionCommand("force_exit");
 
         refreshBtn.addActionListener(this);
+        editBtn.addActionListener(this);
         logoutBtn.addActionListener(this);
         banBtn.addActionListener(this);
         forceExitBtn.addActionListener(this);
@@ -158,6 +162,15 @@ public class AdminFrame extends JFrame implements ActionListener {
             case "refresh_users":
             case "refresh_rooms":
                 Application.sender.sendMessage(new AdminInitRequest());
+                break;
+            case "edit_user":
+                int editRow = userTable.getSelectedRow();
+                if (editRow >= 0) {
+                    String userId = userModel.getValueAt(editRow, 0).toString();
+                    Application.sender.sendMessage(new dto.request.AdminUserInfoRequest(userId));
+                } else {
+                    showWarning("먼저 사용자를 선택하세요.");
+                }
                 break;
             case "force_logout":
                 String userId = getSelectedUserId();
@@ -242,6 +255,113 @@ public class AdminFrame extends JFrame implements ActionListener {
 
     private void showWarning(String message) {
         JOptionPane.showMessageDialog(this, message, "알림", JOptionPane.WARNING_MESSAGE);
+    }
+
+    public void showUserInfoDialog(String userId, String currentNickname, String currentEmail, String currentPhone,
+                                     String currentAddress, String currentDetailAddress, String currentPostalCode,
+                                     String currentGender, String currentBirthDate) {
+        JDialog dialog = new JDialog(this, "사용자 정보 수정", true);
+        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.setSize(500, 520);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel formPanel = new JPanel(new GridLayout(9, 2, 10, 10));
+        formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
+
+        JLabel userIdLabel = new JLabel("아이디:");
+        JTextField userIdField = new JTextField(userId);
+        userIdField.setEditable(false);
+        userIdField.setBackground(new Color(240, 240, 240));
+
+        JLabel nicknameLabel = new JLabel("닉네임:");
+        JTextField nicknameField = new JTextField(currentNickname);
+
+        JLabel emailLabel = new JLabel("이메일:");
+        JTextField emailField = new JTextField(currentEmail);
+
+        JLabel phoneLabel = new JLabel("전화번호:");
+        JTextField phoneField = new JTextField(currentPhone);
+
+        JLabel postalLabel = new JLabel("우편번호:");
+        JTextField postalField = new JTextField(currentPostalCode);
+
+        JLabel addressLabel = new JLabel("주소:");
+        JTextField addressField = new JTextField(currentAddress);
+
+        JLabel detailAddressLabel = new JLabel("상세주소:");
+        JTextField detailAddressField = new JTextField(currentDetailAddress);
+
+        JLabel genderLabel = new JLabel("성별:");
+        JPanel genderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JRadioButton maleBtn = new JRadioButton("남성");
+        JRadioButton femaleBtn = new JRadioButton("여성");
+        ButtonGroup genderGroup = new ButtonGroup();
+        genderGroup.add(maleBtn);
+        genderGroup.add(femaleBtn);
+        genderPanel.add(maleBtn);
+        genderPanel.add(femaleBtn);
+        if ("남성".equals(currentGender) || "MALE".equalsIgnoreCase(currentGender)) {
+            maleBtn.setSelected(true);
+        } else if ("여성".equals(currentGender) || "FEMALE".equalsIgnoreCase(currentGender)) {
+            femaleBtn.setSelected(true);
+        }
+
+        JLabel birthLabel = new JLabel("생년월일:");
+        JTextField birthField = new JTextField(currentBirthDate);
+        birthField.setToolTipText("YYYY-MM-DD 형식");
+
+        formPanel.add(userIdLabel);
+        formPanel.add(userIdField);
+        formPanel.add(nicknameLabel);
+        formPanel.add(nicknameField);
+        formPanel.add(emailLabel);
+        formPanel.add(emailField);
+        formPanel.add(phoneLabel);
+        formPanel.add(phoneField);
+        formPanel.add(postalLabel);
+        formPanel.add(postalField);
+        formPanel.add(addressLabel);
+        formPanel.add(addressField);
+        formPanel.add(detailAddressLabel);
+        formPanel.add(detailAddressField);
+        formPanel.add(genderLabel);
+        formPanel.add(genderPanel);
+        formPanel.add(birthLabel);
+        formPanel.add(birthField);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 10));
+        JButton saveBtn = new JButton("저장");
+        JButton cancelBtn = new JButton("취소");
+
+        saveBtn.addActionListener(ev -> {
+            String newNickname = nicknameField.getText().trim();
+            String newEmail = emailField.getText().trim();
+            String newPhone = phoneField.getText().trim();
+            String newAddress = addressField.getText().trim();
+            String newDetailAddress = detailAddressField.getText().trim();
+            String newPostalCode = postalField.getText().trim();
+            String newGender = maleBtn.isSelected() ? "남성" : (femaleBtn.isSelected() ? "여성" : "");
+            String newBirthDate = birthField.getText().trim();
+
+            if (newNickname.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "닉네임을 입력하세요.", "오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            Application.sender.sendMessage(new dto.request.AdminUserUpdateRequest(
+                userId, newNickname, newEmail, newPhone, newAddress, newDetailAddress, 
+                newPostalCode, newGender, newBirthDate));
+            dialog.dispose();
+        });
+
+        cancelBtn.addActionListener(ev -> dialog.dispose());
+
+        buttonPanel.add(saveBtn);
+        buttonPanel.add(cancelBtn);
+
+        dialog.add(formPanel, BorderLayout.CENTER);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+        dialog.setVisible(true);
     }
 
     public void updateUsers(List<User> users) {
