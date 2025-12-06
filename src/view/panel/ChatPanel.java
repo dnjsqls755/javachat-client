@@ -188,23 +188,37 @@ public class ChatPanel extends JPanel implements ActionListener {
 
     private void showEmojiPicker() {
         String[][] emojiData = {
-            {"😀", "웃는 얼굴"}, {"😂", "기쁨의 눈물"}, {"😍", "하트 눈"}, {"😢", "우는 얼굴"}, {"😡", "화난 얼굴"}, {"😎", "멋진 얼굴"},
-            {"😱", "비명"}, {"😊", "행복"}, {"😉", "윙크"}, {"😭", "대성통곡"}, {"😘", "키스"}, {"😐", "무표정"},
-            {"❤️", "하트"}, {"👍", "좋아요"}, {"👎", "싫어요"}, {"👏", "박수"}, {"🙏", "기도"}, {"🎉", "축하"},
+            {"😀", "웃음"}, {"😂", "기쁨"}, {"😍", "하트"}, {"😢", "울음"}, {"😡", "화남"}, {"😎", "멋짐"},
+            {"😱", "비명"}, {"😊", "행복"}, {"😉", "윙크"}, {"😭", "통곡"}, {"😘", "키스"}, {"😐", "무표정"},
+            {"❤️", "하트"}, {"👍", "좋아"}, {"👎", "싫어"}, {"👏", "박수"}, {"🙏", "기도"}, {"🎉", "축하"},
             {"🎂", "케이크"}, {"🎁", "선물"}, {"⭐", "별"}, {"💩", "똥"}, {"🐶", "강아지"}, {"🐱", "고양이"}
+        };
+        
+        Color[] colors = {
+            new Color(255, 220, 100), new Color(255, 200, 150), new Color(255, 150, 200), 
+            new Color(200, 220, 255), new Color(255, 100, 100), new Color(100, 100, 100),
+            new Color(255, 200, 100), new Color(255, 240, 150), new Color(255, 220, 180),
+            new Color(220, 230, 255), new Color(255, 180, 200), new Color(200, 200, 200),
+            new Color(255, 100, 100), new Color(180, 220, 180), new Color(180, 180, 220),
+            new Color(220, 200, 150), new Color(230, 220, 200), new Color(255, 200, 100),
+            new Color(255, 210, 210), new Color(200, 180, 150), new Color(255, 255, 150),
+            new Color(160, 120, 80), new Color(220, 200, 180), new Color(255, 220, 230)
         };
         
         JPanel emojiPanel = new JPanel(new GridLayout(4, 6, 5, 5));
         emojiPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        for (String[] emojiInfo : emojiData) {
-            String emoji = emojiInfo[0];
-            String tooltip = emojiInfo[1];
-            JButton btn = new JButton(emoji);
-            btn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
+        for (int i = 0; i < emojiData.length; i++) {
+            final String emoji = emojiData[i][0];
+            final String label = emojiData[i][1];
+            
+            JButton btn = new JButton(label);
+            btn.setFont(new Font("맑은 고딕", Font.BOLD, 12));
             btn.setPreferredSize(new Dimension(50, 50));
+            btn.setBackground(colors[i]);
+            btn.setOpaque(true);
             btn.setFocusPainted(false);
-            btn.setToolTipText(tooltip);
+            btn.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
             btn.addActionListener(e -> {
                 String nickname = Application.me.getNickName();
                 if (nickname != null && !nickname.isEmpty()) {
@@ -221,5 +235,7 @@ public class ChatPanel extends JPanel implements ActionListener {
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
     }
+    
 
 }
+
