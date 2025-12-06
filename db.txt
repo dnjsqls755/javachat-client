@@ -1,0 +1,64 @@
+CREATE TABLE Users (
+    user_id     VARCHAR2(50) PRIMARY KEY,  
+    name        VARCHAR2(50) NOT NULL,      
+    password    VARCHAR2(100) NOT NULL,              
+    profile_img VARCHAR2(255),              
+    status_msg  VARCHAR2(255),
+    nickname    VARCHAR2(30),
+    email       VARCHAR2(100),
+    phone       VARCHAR2(13),
+    address     VARCHAR2(200),
+    detail_address VARCHAR2(200),
+    postal_code VARCHAR2(10),
+    gender      VARCHAR2(10),
+    birth_date  DATE,
+    created_at  DATE DEFAULT SYSDATE,
+    is_online NUMBER(1) DEFAULT 0 NOT NULL
+);
+
+CREATE TABLE ChatRooms (
+    room_id      NUMBER PRIMARY KEY,
+    room_name    VARCHAR2(100) NOT NULL,
+    creator_id   VARCHAR2(50) REFERENCES Users(user_id),
+    created_at   DATE DEFAULT SYSDATE
+);
+
+CREATE TABLE ChatRoomUsers (
+    room_id   NUMBER REFERENCES ChatRooms(room_id),
+    user_id   VARCHAR2(50) REFERENCES Users(user_id),
+    joined_at DATE DEFAULT SYSDATE,
+    PRIMARY KEY (room_id, user_id)
+);
+
+CREATE TABLE Messages (
+    message_id   NUMBER PRIMARY KEY,
+    room_id      NUMBER REFERENCES ChatRooms(room_id),
+    sender_id    VARCHAR2(50) REFERENCES Users(user_id),
+    content      VARCHAR2(1000),
+    sent_at      DATE DEFAULT SYSDATE
+);
+
+CREATE TABLE Friends (
+    friendship_id NUMBER PRIMARY KEY,
+    user_id VARCHAR2(50) NOT NULL,
+    friend_id VARCHAR2(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT fk_friends_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_friends_friend FOREIGN KEY (friend_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT chk_friends_not_self CHECK (user_id != friend_id),
+    CONSTRAINT unique_friendship UNIQUE (user_id, friend_id)
+);
+
+CREATE TABLE FriendRequests (
+    request_id NUMBER PRIMARY KEY,
+    from_user_id VARCHAR2(50) NOT NULL,
+    to_user_id VARCHAR2(50) NOT NULL,
+    status VARCHAR2(20) DEFAULT 'PENDING' NOT NULL, -- PENDING, ACCEPTED, REJECTED
+    created_at TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT SYSTIMESTAMP NOT NULL,
+    CONSTRAINT fk_request_from FOREIGN KEY (from_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT fk_request_to FOREIGN KEY (to_user_id) REFERENCES users(user_id) ON DELETE CASCADE,
+    CONSTRAINT chk_request_not_self CHECK (from_user_id != to_user_id),
+    CONSTRAINT chk_request_status CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED')),
+    CONSTRAINT unique_friend_request UNIQUE (from_user_id, to_user_id)
+);

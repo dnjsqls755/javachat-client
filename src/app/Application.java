@@ -49,7 +49,7 @@ public class Application {
         try {
             PostcodeHttpServer.start();
 
-            socket = new Socket("172.16.28.103", 9000);
+            socket = new Socket("192.168.0.22", 9000);
             System.out.println("connect success to chat server");
 
             sender = new MessageSender(socket);

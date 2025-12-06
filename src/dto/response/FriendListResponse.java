@@ -12,7 +12,7 @@ public class FriendListResponse {
         if (message == null || message.isEmpty()) {
             return;
         }
-        String[] userValues = message.split("\\\\|");
+        String[] userValues = message.split("\\|");
         for (String value : userValues) {
             if (value.isEmpty()) {
                 continue;
