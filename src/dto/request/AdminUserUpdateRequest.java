@@ -4,6 +4,7 @@ import dto.type.DtoType;
 
 public class AdminUserUpdateRequest extends DTO {
     private final String userId;
+    private final String name;
     private final String nickname;
     private final String email;
     private final String phone;
@@ -13,11 +14,12 @@ public class AdminUserUpdateRequest extends DTO {
     private final String gender;
     private final String birthDate;
 
-    public AdminUserUpdateRequest(String userId, String nickname, String email, String phone,
+    public AdminUserUpdateRequest(String userId, String name, String nickname, String email, String phone,
                                    String address, String detailAddress, String postalCode,
                                    String gender, String birthDate) {
         super(DtoType.ADMIN_USER_UPDATE);
         this.userId = userId;
+        this.name = name;
         this.nickname = nickname;
         this.email = email;
         this.phone = phone;
@@ -30,7 +32,7 @@ public class AdminUserUpdateRequest extends DTO {
 
     @Override
     public String toString() {
-        return super.toString() + userId + "|" + nickname + "|" + email + "|" + phone + "|" + 
+        return super.toString() + userId + "|" + name + "|" + nickname + "|" + email + "|" + phone + "|" + 
                address + "|" + detailAddress + "|" + postalCode + "|" + gender + "|" + birthDate;
     }
 }

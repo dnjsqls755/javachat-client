@@ -11,6 +11,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class ChatPanel extends JPanel implements ActionListener {
 
@@ -21,13 +22,17 @@ public class ChatPanel extends JPanel implements ActionListener {
 
     JTextField msgTextF = new JTextField(50);
     JButton sendBtn = new JButton("전송");
-    
+    JComboBox<String> whisperCombo = new JComboBox<>();
+    DefaultComboBoxModel<String> whisperModel = new DefaultComboBoxModel<>();
+
+
     // 카카오톡 스타일 색상
     private static final Color BACKGROUND_COLOR = new Color(178, 199, 217);  // 연한 파란색 배경
     private static final Color MY_MESSAGE_COLOR = new Color(255, 235, 51);   // 노란색 (내 메시지)
     private static final Color OTHER_MESSAGE_COLOR = Color.WHITE;            // 흰색 (상대방 메시지)
     private static final Color SYSTEM_MESSAGE_COLOR = new Color(100, 100, 100);  // 회색 (시스템 메시지)
-    
+    private static final Color WHISPER_COLOR = new Color(220, 240, 255); // 귓속말 배경
+
     private SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
 
     public ChatPanel(JFrame frame, String chatRoomName) {
@@ -49,8 +54,16 @@ public class ChatPanel extends JPanel implements ActionListener {
         scrPane.getViewport().setBackground(BACKGROUND_COLOR);
         add(scrPane);
 
+
+        // 귓속말 콤보박스
+        whisperCombo.setModel(whisperModel);
+        whisperCombo.setBounds(10, 450, 90, 40);
+        whisperCombo.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        whisperCombo.addItem("전체");
+        add(whisperCombo);
+
         // 메시지 입력 필드
-        msgTextF.setBounds(10, 450, 230, 40);
+        msgTextF.setBounds(110, 450, 130, 40);
         msgTextF.setFont(new Font("맑은 고딕", Font.PLAIN, 13));
         msgTextF.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
@@ -85,24 +98,19 @@ public class ChatPanel extends JPanel implements ActionListener {
     public void addMessage(MessageType messageType, String userName, String message) {
         try {
             String timeStamp = timeFormat.format(new Date());
-            
             switch (messageType) {
                 case ENTER:
                 case EXIT:
-                    // 시스템 메시지 (중앙 정렬)
                     addSystemMessage(message);
                     break;
-                    
                 case CHAT:
-                    // 내가 보낸 메시지인지 확인
-                    boolean isMyMessage = userName.equals(Application.me.getNickName());
-                    addChatMessage(userName, message, timeStamp, isMyMessage);
+                    addChatMessage(userName, message, timeStamp, userName.equals(Application.me.getNickName()));
+                    break;
+                case WHISPER:
+                    addWhisperMessage(userName, message, timeStamp);
                     break;
             }
-            
-            // 자동 스크롤 (최신 메시지로)
             chatTextPane.setCaretPosition(doc.getLength());
-            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -171,19 +179,66 @@ public class ChatPanel extends JPanel implements ActionListener {
     @Override
     public void actionPerformed(ActionEvent e) {
         String message = msgTextF.getText().trim();
-
         if (!message.isEmpty()) {
             String nickname = Application.me.getNickName();
             if (nickname == null || nickname.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "닉네임 정보가 없습니다.", "오류", JOptionPane.ERROR_MESSAGE);
                 return;
             }
-            
-            Application.sender.sendMessage(new MessageRequest(MessageType.CHAT, chatRoomName, nickname, message));
-            System.out.println("[전송] 방: " + chatRoomName + ", 내용: " + message);
+            String target = (String) whisperCombo.getSelectedItem();
+            if (target != null && !"전체".equals(target)) {
+                Application.sender.sendMessage(new MessageRequest(MessageType.WHISPER, chatRoomName, nickname + "," + target, message));
+                System.out.println("[귓속말 전송] 방: " + chatRoomName + ", 대상: " + target + ", 내용: " + message);
+            } else {
+                Application.sender.sendMessage(new MessageRequest(MessageType.CHAT, chatRoomName, nickname, message));
+                System.out.println("[전송] 방: " + chatRoomName + ", 내용: " + message);
+            }
         }
         msgTextF.setText("");
         msgTextF.requestFocus();
+    }
+
+    // 귓속말 메시지 표시
+    private void addWhisperMessage(String userField, String message, String time) throws BadLocationException {
+        String[] users = userField.split(",", 2);
+        String from = users.length > 0 ? users[0].trim() : "";
+        String to = users.length > 1 ? users[1].trim() : "";
+        String me = Application.me != null ? Application.me.getNickName() : "";
+
+        boolean amSender = from.equals(me);
+        boolean amReceiver = to.equals(me);
+
+        String label;
+        if (amSender) {
+            label = to.isEmpty() ? "대상에게 귓속말: " : to + "님에게 귓속말: ";
+        } else if (amReceiver) {
+            label = from + "님으로부터 귓속말: ";
+        } else {
+            // fallback 표시
+            label = from + " → " + to + " 귓속말: ";
+        }
+
+        SimpleAttributeSet nameAttrs = new SimpleAttributeSet();
+        SimpleAttributeSet msgAttrs = new SimpleAttributeSet();
+        StyleConstants.setFontSize(nameAttrs, 11);
+        StyleConstants.setFontSize(msgAttrs, 13);
+        StyleConstants.setBackground(msgAttrs, WHISPER_COLOR);
+        StyleConstants.setItalic(msgAttrs, true);
+
+        doc.insertString(doc.getLength(), "\n", null);
+        doc.insertString(doc.getLength(), label, nameAttrs);
+        doc.insertString(doc.getLength(), message + "  " + time + "\n", msgAttrs);
+    }
+
+    // 채팅방 참여자 목록으로 귓속말 대상 갱신
+    public void updateWhisperTargets(List<String> users) {
+        whisperModel.removeAllElements();
+        whisperModel.addElement("전체");
+        for (String u : users) {
+            if (!u.equals(Application.me.getNickName())) {
+                whisperModel.addElement(u);
+            }
+        }
     }
 
     private void showEmojiPicker() {

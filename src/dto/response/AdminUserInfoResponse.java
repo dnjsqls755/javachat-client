@@ -4,6 +4,7 @@ import dto.request.DTO;
 import dto.type.DtoType;
 
 public class AdminUserInfoResponse extends DTO {
+    private final String name;
     private final String userId;
     private final String nickname;
     private final String email;
@@ -14,10 +15,11 @@ public class AdminUserInfoResponse extends DTO {
     private final String gender;
     private final String birthDate;
 
-    public AdminUserInfoResponse(String userId, String nickname, String email, String phone,
+    public AdminUserInfoResponse(String name, String userId, String nickname, String email, String phone,
                                   String address, String detailAddress, String postalCode,
                                   String gender, String birthDate) {
         super(DtoType.ADMIN_USER_INFO_RESULT);
+        this.name = name;
         this.userId = userId;
         this.nickname = nickname;
         this.email = email;
@@ -31,23 +33,26 @@ public class AdminUserInfoResponse extends DTO {
 
     public AdminUserInfoResponse(String message) {
         super(DtoType.ADMIN_USER_INFO_RESULT);
-        String[] parts = message.split("\\|", 9);
-        this.userId = parts.length > 0 ? parts[0] : "";
-        this.nickname = parts.length > 1 ? parts[1] : "";
-        this.email = parts.length > 2 ? parts[2] : "";
-        this.phone = parts.length > 3 ? parts[3] : "";
-        this.address = parts.length > 4 ? parts[4] : "";
-        this.detailAddress = parts.length > 5 ? parts[5] : "";
-        this.postalCode = parts.length > 6 ? parts[6] : "";
-        this.gender = parts.length > 7 ? parts[7] : "";
-        this.birthDate = parts.length > 8 ? parts[8] : "";
+        String[] parts = message.split("\\|", 10);
+        this.name = parts.length > 0 ? parts[0] : "";
+        this.userId = parts.length > 1 ? parts[1] : "";
+        this.nickname = parts.length > 2 ? parts[2] : "";
+        this.email = parts.length > 3 ? parts[3] : "";
+        this.phone = parts.length > 4 ? parts[4] : "";
+        this.address = parts.length > 5 ? parts[5] : "";
+        this.detailAddress = parts.length > 6 ? parts[6] : "";
+        this.postalCode = parts.length > 7 ? parts[7] : "";
+        this.gender = parts.length > 8 ? parts[8] : "";
+        this.birthDate = parts.length > 9 ? parts[9] : "";
     }
 
     @Override
     public String toString() {
-        return super.toString() + userId + "|" + nickname + "|" + email + "|" + phone + "|" + 
-               address + "|" + detailAddress + "|" + postalCode + "|" + gender + "|" + birthDate;
+         return super.toString() + name + "|" + userId + "|" + nickname + "|" + email + "|" + phone + "|" + 
+             address + "|" + detailAddress + "|" + postalCode + "|" + gender + "|" + birthDate;
     }
+
+        public String getName() { return name; }
 
     public String getUserId() { return userId; }
     public String getNickname() { return nickname; }

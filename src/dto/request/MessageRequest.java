@@ -25,6 +25,7 @@ public class MessageRequest extends DTO {
 
     @Override
     public String toString() {
-        return super.toString() + messageType + "," + chatRoomName + "," + userName + "," + message;
+        // Use '|' as field separator to allow commas inside userName (from,to) and message
+        return super.toString() + messageType + "|" + chatRoomName + "|" + userName + "|" + message;
     }
 }

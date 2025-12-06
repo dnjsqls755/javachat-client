@@ -272,21 +272,24 @@ public class AdminFrame extends JFrame implements ActionListener {
         JOptionPane.showMessageDialog(this, message, "알림", JOptionPane.WARNING_MESSAGE);
     }
 
-    public void showUserInfoDialog(String userId, String currentNickname, String currentEmail, String currentPhone,
+    public void showUserInfoDialog(String userId, String currentName, String currentNickname, String currentEmail, String currentPhone,
                                      String currentAddress, String currentDetailAddress, String currentPostalCode,
                                      String currentGender, String currentBirthDate) {
         JDialog dialog = new JDialog(this, "사용자 정보 수정", true);
         dialog.setLayout(new BorderLayout(10, 10));
-        dialog.setSize(500, 520);
+        dialog.setSize(500, 560);
         dialog.setLocationRelativeTo(this);
 
-        JPanel formPanel = new JPanel(new GridLayout(9, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(10, 2, 10, 10));
         formPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
 
         JLabel userIdLabel = new JLabel("아이디:");
         JTextField userIdField = new JTextField(userId);
         userIdField.setEditable(false);
         userIdField.setBackground(new Color(240, 240, 240));
+
+        JLabel nameLabel = new JLabel("이름:");
+        JTextField nameField = new JTextField(currentName);
 
         JLabel nicknameLabel = new JLabel("닉네임:");
         JTextField nicknameField = new JTextField(currentNickname);
@@ -327,6 +330,8 @@ public class AdminFrame extends JFrame implements ActionListener {
 
         formPanel.add(userIdLabel);
         formPanel.add(userIdField);
+        formPanel.add(nameLabel);
+        formPanel.add(nameField);
         formPanel.add(nicknameLabel);
         formPanel.add(nicknameField);
         formPanel.add(emailLabel);
@@ -349,6 +354,7 @@ public class AdminFrame extends JFrame implements ActionListener {
         JButton cancelBtn = new JButton("취소");
 
         saveBtn.addActionListener(ev -> {
+            String newName = nameField.getText().trim();
             String newNickname = nicknameField.getText().trim();
             String newEmail = emailField.getText().trim();
             String newPhone = phoneField.getText().trim();
@@ -358,13 +364,17 @@ public class AdminFrame extends JFrame implements ActionListener {
             String newGender = maleBtn.isSelected() ? "남성" : (femaleBtn.isSelected() ? "여성" : "");
             String newBirthDate = birthField.getText().trim();
 
+            if (newName.isEmpty()) {
+                JOptionPane.showMessageDialog(dialog, "이름을 입력하세요.", "오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
             if (newNickname.isEmpty()) {
                 JOptionPane.showMessageDialog(dialog, "닉네임을 입력하세요.", "오류", JOptionPane.ERROR_MESSAGE);
                 return;
             }
 
             Application.sender.sendMessage(new dto.request.AdminUserUpdateRequest(
-                userId, newNickname, newEmail, newPhone, newAddress, newDetailAddress, 
+                userId, newName, newNickname, newEmail, newPhone, newAddress, newDetailAddress, 
                 newPostalCode, newGender, newBirthDate));
             dialog.dispose();
         });

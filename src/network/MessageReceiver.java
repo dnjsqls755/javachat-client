@@ -141,16 +141,17 @@ public class MessageReceiver extends Thread {
                 }
                 break;
 
-            case MESSAGE:
+            case MESSAGE: {
                 MessageResponse messageRes = new MessageResponse(message);
                 ChatPanel chatPanel = Application.chatPanelMap.get(messageRes.getChatRoomName());
                 if (chatPanel != null) {
                     chatPanel.addMessage(messageRes.getMessageType(), messageRes.getUserName(), messageRes.getMessage());
-                    System.out.println("[MESSAGE] 메시지 수신 - 방 " + messageRes.getChatRoomName() + ", 발신자 " + messageRes.getUserName());
+                    System.out.println("[MESSAGE] 메시지 수신 - 방 " + messageRes.getChatRoomName() + ", 타입 " + messageRes.getMessageType() + ", 필드 " + messageRes.getUserName());
                 } else {
                     System.out.println("[WARNING] 채팅 패널을 찾을 수 없음: " + messageRes.getChatRoomName());
                 }
                 break;
+            }
 
             case CREATE_CHAT:
                 CreateChatRoomResponse createChatRoomResponse = new CreateChatRoomResponse(message);
@@ -210,7 +211,7 @@ public class MessageReceiver extends Thread {
                 if (Application.adminFrame != null) {
                     SwingUtilities.invokeLater(() -> 
                         Application.adminFrame.showUserInfoDialog(
-                            userInfoRes.getUserId(), userInfoRes.getNickname(), userInfoRes.getEmail(), 
+                            userInfoRes.getUserId(), userInfoRes.getName(), userInfoRes.getNickname(), userInfoRes.getEmail(), 
                             userInfoRes.getPhone(), userInfoRes.getAddress(), userInfoRes.getDetailAddress(),
                             userInfoRes.getPostalCode(), userInfoRes.getGender(), userInfoRes.getBirthDate()));
                 }
@@ -232,9 +233,8 @@ public class MessageReceiver extends Thread {
                 closeChatRoom(forcedRoom, reason);
                 break;
 
-            case USER_LIST:
+            case USER_LIST: {
                 UserListResponse userListRes = new UserListResponse(message);
-
                 if ("Lobby".equals(userListRes.getChatRoomName())) {
                     Application.users = userListRes.getUsers();
                     System.out.println("[USER_LIST] 로비 사용자 목록 업데이트 (" + Application.users.size() + ")");
@@ -246,8 +246,18 @@ public class MessageReceiver extends Thread {
                     } else {
                         System.out.println("[WARNING] 사용자 목록 패널을 찾을 수 없음: " + userListRes.getChatRoomName());
                     }
+                    // 귓속말 대상 콤보 갱신
+                    ChatPanel chatPanel = Application.chatPanelMap.get(userListRes.getChatRoomName());
+                    if (chatPanel != null) {
+                        java.util.List<String> nicks = new java.util.ArrayList<>();
+                        for (domain.User u : userListRes.getUsers()) {
+                            nicks.add(u.getNickName());
+                        }
+                        chatPanel.updateWhisperTargets(nicks);
+                    }
                 }
                 break;
+            }
 
             case CHAT_ROOM_LIST:
                 ChatRoomListResponse chatRoomListRes = new ChatRoomListResponse(message);

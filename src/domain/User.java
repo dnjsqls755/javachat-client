@@ -1,5 +1,8 @@
 package domain;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 
 public class User {
@@ -17,7 +20,12 @@ public class User {
 
     public User(String id, String nickname, String date) {
         this(id, nickname, "USER", false, false);
-        this.createdAt = new Date(date);
+        try {
+            LocalDate localDate = LocalDate.parse(date);
+            this.createdAt = Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        } catch (DateTimeParseException e) {
+            this.createdAt = new Date();
+        }
     }
 
     public User(String id, String nickname, String role, boolean online, boolean banned) {
