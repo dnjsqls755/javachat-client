@@ -59,12 +59,7 @@ public class LobbyFrame extends JFrame implements WindowListener {
         side.add(friendNavBtn);
         side.add(Box.createVerticalStrut(12));
         side.add(chatNavBtn);
-        side.add(Box.createVerticalStrut(18));
-        side.add(createDotDivider());
         side.add(Box.createVerticalGlue());
-        side.add(createGhostButton("\u263A", "이모티콘"));
-        side.add(Box.createVerticalStrut(12));
-        side.add(createGhostButton("\u2699", "설정"));
         return side;
     }
 

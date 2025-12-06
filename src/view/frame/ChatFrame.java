@@ -26,10 +26,15 @@ public class ChatFrame extends JFrame implements WindowListener {
 
         this.chatRoomName = chatRoomName;
         chatPanel = new ChatPanel(this, chatRoomName);
-        chatRoomUserListPanel = new ChatRoomUserListPanel(this);
+        chatRoomUserListPanel = new ChatRoomUserListPanel(this, chatRoomName);
         menuPanel = new MenuPanel(this, chatRoomName);
         menuPanel.setBackBtnVisible(true);
         menuPanel.setExitBtnVisible(true);
+
+        // 컴포넌트 추가
+        add(menuPanel);
+        add(chatRoomUserListPanel);
+        add(chatPanel);
 
         addWindowListener(this);
 

@@ -61,7 +61,7 @@ public class ChatPanel extends JPanel implements ActionListener {
         // 이모티콘 버튼
         JButton emojiBtn = new JButton("😀");
         emojiBtn.setBounds(250, 450, 40, 40);
-        emojiBtn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 18));
+        emojiBtn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
         emojiBtn.setBackground(Color.WHITE);
         emojiBtn.setBorderPainted(true);
         emojiBtn.setFocusPainted(false);
@@ -221,4 +221,5 @@ public class ChatPanel extends JPanel implements ActionListener {
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
     }
+
 }

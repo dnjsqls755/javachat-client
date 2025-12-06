@@ -2,6 +2,7 @@ package network;
 
 import app.Application;
 import domain.ChatRoom;
+import dto.request.ChatRoomInviteAcceptRequest;
 import dto.request.EnterChatRequest;
 import dto.response.*;
 import dto.type.DtoType;
@@ -442,6 +443,55 @@ public class MessageReceiver extends Thread {
                         }
                     });
                 }
+                break;
+
+            case CHAT_ROOM_INVITE_RECEIVED:
+                ChatRoomInviteResponse inviteResponse = new ChatRoomInviteResponse(message);
+                System.out.println("[CHAT_ROOM_INVITE_RECEIVED] 초대 수신 - 방: " + inviteResponse.getRoomName() + 
+                                   ", 발신자: " + inviteResponse.getSenderNickname() + " (" + inviteResponse.getSenderUserId() + ")");
+                
+                SwingUtilities.invokeLater(() -> {
+                    String inviteMessage = inviteResponse.getSenderNickname() + "님이 \"" + inviteResponse.getRoomName() + 
+                                          "\" 채팅방으로 초대했습니다.\n수락하시겠습니까?";
+                    int result = JOptionPane.showConfirmDialog(null, inviteMessage, "채팅방 초대", 
+                                                               JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+                    
+                    if (result == JOptionPane.YES_OPTION) {
+                        // 초대 수락 - 채팅방에 입장
+                        ChatRoomInviteAcceptRequest acceptReq = new ChatRoomInviteAcceptRequest(
+                            inviteResponse.getRoomName(), 
+                            Application.me.getId()
+                        );
+                        Application.sender.sendMessage(acceptReq);
+                        
+                        // 채팅방 입장 전에 ChatFrame 생성
+                        String inviteRoomName = inviteResponse.getRoomName();
+                        if (!Application.chatFrameMap.containsKey(inviteRoomName)) {
+                            ChatFrame chatFrame = new ChatFrame(inviteRoomName);
+                            Application.chatFrameMap.put(inviteRoomName, chatFrame);
+                            Application.chatPanelMap.put(inviteRoomName, chatFrame.getChatPanel());
+                            Application.chatRoomUserListPanelMap.put(inviteRoomName, chatFrame.getChatRoomUserListPanel());
+                        }
+                        
+                        // 서버에서 USER_LIST를 받을 수 있도록 충분한 시간 대기
+                        new Thread(() -> {
+                            try {
+                                Thread.sleep(200);
+                            } catch (InterruptedException ie) {
+                                ie.printStackTrace();
+                            }
+                            
+                            // 채팅방 입장 요청 전송
+                            EnterChatRequest enterReq = new EnterChatRequest(inviteRoomName, Application.me.getId());
+                            Application.sender.sendMessage(enterReq);
+                            
+                            System.out.println("[CHAT_ROOM_INVITE_ACCEPT] 초대 수락 및 입장 - 방: " + inviteRoomName);
+                        }).start();
+                    } else {
+                        // 초대 거절 - 특별한 메시지 없음 (암묵적 거절)
+                        System.out.println("[CHAT_ROOM_INVITE_DECLINE] 초대 거절 - 방: " + inviteResponse.getRoomName());
+                    }
+                });
                 break;
 
             default:

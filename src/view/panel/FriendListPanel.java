@@ -59,18 +59,9 @@ public class FriendListPanel extends JPanel {
         title.setForeground(new Color(36, 36, 36));
         header.add(title, BorderLayout.WEST);
 
-        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        actions.setOpaque(false);
-        JButton searchBtn = createGhostButton("\u2315", "검색");
-        JButton refreshBtn = createGhostButton("\u21BA", "새로고침");
         JButton addBtn = createGhostButton("+", "친구 추가");
-        searchBtn.addActionListener(e -> searchField.requestFocusInWindow());
-        refreshBtn.addActionListener(e -> applyFilter());
         addBtn.addActionListener(e -> onAddFriend());
-        actions.add(searchBtn);
-        actions.add(refreshBtn);
-        actions.add(addBtn);
-        header.add(actions, BorderLayout.EAST);
+        header.add(addBtn, BorderLayout.EAST);
         return header;
     }
 
