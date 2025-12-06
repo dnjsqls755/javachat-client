@@ -15,10 +15,13 @@ public class ChatRoomListPanel extends JPanel {
 
     private static final Color BACKGROUND = new Color(245, 242, 235);
     private static final Font TITLE_FONT = new Font("Malgun Gothic", Font.BOLD, 20);
+    private static final Font SECTION_FONT = new Font("Malgun Gothic", Font.BOLD, 13);
     private static final Font BODY_FONT = new Font("Malgun Gothic", Font.PLAIN, 13);
 
-    private final DefaultListModel<ChatRoom> roomModel = new DefaultListModel<>();
-    private final JList<ChatRoom> roomList = new JList<>(roomModel);
+    private final DefaultListModel<ChatRoom> publicRoomModel = new DefaultListModel<>();
+    private final DefaultListModel<ChatRoom> directRoomModel = new DefaultListModel<>();
+    private final JList<ChatRoom> publicRoomList = new JList<>(publicRoomModel);
+    private final JList<ChatRoom> directRoomList = new JList<>(directRoomModel);
 
     public ChatRoomListPanel() {
         setLayout(new BorderLayout());
@@ -64,41 +67,111 @@ public class ChatRoomListPanel extends JPanel {
     }
 
     private JComponent buildListArea() {
-        JPanel area = new JPanel(new BorderLayout());
+        JPanel area = new JPanel();
+        area.setLayout(new BoxLayout(area, BoxLayout.Y_AXIS));
         area.setOpaque(false);
         area.setBorder(BorderFactory.createEmptyBorder(0, 12, 12, 12));
 
-        roomList.setBorder(BorderFactory.createEmptyBorder());
-        roomList.setBackground(Color.WHITE);
-        roomList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        roomList.setCellRenderer(new ChatRoomRenderer());
-        roomList.addMouseListener(new MouseAdapter() {
+        // 일반 채팅방 섹션
+        JPanel publicSection = new JPanel(new BorderLayout());
+        publicSection.setOpaque(false);
+        publicSection.setMaximumSize(new Dimension(Integer.MAX_VALUE, 300));
+        
+        JLabel publicLabel = new JLabel("일반 채팅");
+        publicLabel.setFont(SECTION_FONT);
+        publicLabel.setForeground(new Color(90, 90, 90));
+        publicLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+        publicRoomList.setBorder(BorderFactory.createEmptyBorder());
+        publicRoomList.setBackground(Color.WHITE);
+        publicRoomList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        publicRoomList.setCellRenderer(new ChatRoomRenderer());
+        publicRoomList.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                int index = roomList.locationToIndex(e.getPoint());
+                int index = publicRoomList.locationToIndex(e.getPoint());
                 if (index >= 0 && e.getClickCount() == 2) {
-                    ChatRoom room = roomModel.getElementAt(index);
+                    ChatRoom room = publicRoomModel.getElementAt(index);
                     enterRoom(room.getName());
                 }
             }
         });
 
-        JScrollPane scroll = new JScrollPane(roomList);
-        scroll.setBorder(BorderFactory.createCompoundBorder(
+        JScrollPane publicScroll = new JScrollPane(publicRoomList);
+        publicScroll.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(232, 232, 232)),
                 BorderFactory.createEmptyBorder()
         ));
-        scroll.getVerticalScrollBar().setUnitIncrement(12);
+        publicScroll.getVerticalScrollBar().setUnitIncrement(12);
 
-        area.add(scroll, BorderLayout.CENTER);
+        publicSection.add(publicLabel, BorderLayout.NORTH);
+        publicSection.add(publicScroll, BorderLayout.CENTER);
+
+        // 1:1 채팅 섹션
+        JPanel directSection = new JPanel(new BorderLayout());
+        directSection.setOpaque(false);
+        directSection.setMaximumSize(new Dimension(Integer.MAX_VALUE, 300));
+        
+        JLabel directLabel = new JLabel("1:1 채팅");
+        directLabel.setFont(SECTION_FONT);
+        directLabel.setForeground(new Color(90, 90, 90));
+        directLabel.setBorder(BorderFactory.createEmptyBorder(10, 5, 5, 5));
+
+        directRoomList.setBorder(BorderFactory.createEmptyBorder());
+        directRoomList.setBackground(Color.WHITE);
+        directRoomList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        directRoomList.setCellRenderer(new DirectChatRenderer());
+        directRoomList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int index = directRoomList.locationToIndex(e.getPoint());
+                if (index >= 0 && e.getClickCount() == 2) {
+                    ChatRoom room = directRoomModel.getElementAt(index);
+                    enterRoom(room.getName());
+                }
+            }
+        });
+
+        JScrollPane directScroll = new JScrollPane(directRoomList);
+        directScroll.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(232, 232, 232)),
+                BorderFactory.createEmptyBorder()
+        ));
+        directScroll.getVerticalScrollBar().setUnitIncrement(12);
+
+        directSection.add(directLabel, BorderLayout.NORTH);
+        directSection.add(directScroll, BorderLayout.CENTER);
+
+        area.add(publicSection);
+        area.add(Box.createVerticalStrut(10));
+        area.add(directSection);
+
         return area;
     }
 
     public void paintChatRoomList() {
-        roomModel.clear();
+        publicRoomModel.clear();
+        directRoomModel.clear();
+        
+        if (Application.me == null) return;
+        
         for (ChatRoom chatRoom : Application.chatRooms) {
-            if (!Application.LOBBY_CHAT_NAME.equals(chatRoom.getName())) {
-                roomModel.addElement(chatRoom);
+            String roomName = chatRoom.getName();
+            
+            // 로비는 제외
+            if (Application.LOBBY_CHAT_NAME.equals(roomName)) {
+                continue;
+            }
+            
+            // 1:1 채팅방 (DM-로 시작)
+            if (roomName.startsWith("DM-")) {
+                // 현재 사용자가 포함된 1:1 채팅방만 표시
+                if (roomName.contains(Application.me.getId())) {
+                    directRoomModel.addElement(chatRoom);
+                }
+            } else {
+                // 일반 채팅방
+                publicRoomModel.addElement(chatRoom);
             }
         }
     }
@@ -107,15 +180,36 @@ public class ChatRoomListPanel extends JPanel {
         if (Application.LOBBY_CHAT_NAME.equals(chatRoomName)) {
             return;
         }
-        boolean exists = false;
-        for (int i = 0; i < roomModel.size(); i++) {
-            if (roomModel.get(i).getName().equals(chatRoomName)) {
-                exists = true;
-                break;
+        
+        if (Application.me == null) return;
+        
+        // 1:1 채팅방
+        if (chatRoomName.startsWith("DM-")) {
+            // 현재 사용자가 포함된 경우만 추가
+            if (chatRoomName.contains(Application.me.getId())) {
+                boolean exists = false;
+                for (int i = 0; i < directRoomModel.size(); i++) {
+                    if (directRoomModel.get(i).getName().equals(chatRoomName)) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    directRoomModel.addElement(new ChatRoom(chatRoomName));
+                }
             }
-        }
-        if (!exists) {
-            roomModel.addElement(new ChatRoom(chatRoomName));
+        } else {
+            // 일반 채팅방
+            boolean exists = false;
+            for (int i = 0; i < publicRoomModel.size(); i++) {
+                if (publicRoomModel.get(i).getName().equals(chatRoomName)) {
+                    exists = true;
+                    break;
+                }
+            }
+            if (!exists) {
+                publicRoomModel.addElement(new ChatRoom(chatRoomName));
+            }
         }
     }
 
@@ -177,6 +271,78 @@ public class ChatRoomListPanel extends JPanel {
 
             if (isSelected) {
                 setBackground(new Color(245, 243, 236));
+            } else {
+                setBackground(Color.WHITE);
+            }
+            return this;
+        }
+    }
+
+    private static class DirectChatRenderer extends JPanel implements ListCellRenderer<ChatRoom> {
+        private final JLabel avatar = new JLabel("", SwingConstants.CENTER);
+        private final JLabel title = new JLabel();
+
+        DirectChatRenderer() {
+            setLayout(new BorderLayout(12, 0));
+            setBorder(BorderFactory.createEmptyBorder(12, 14, 12, 14));
+            setBackground(Color.WHITE);
+
+            avatar.setPreferredSize(new Dimension(46, 46));
+            avatar.setOpaque(true);
+            avatar.setBackground(new Color(200, 220, 240));
+            avatar.setForeground(new Color(80, 80, 80));
+            avatar.setFont(new Font("Arial", Font.BOLD, 14));
+
+            title.setFont(new Font("Malgun Gothic", Font.BOLD, 15));
+            title.setForeground(new Color(30, 30, 30));
+
+            add(avatar, BorderLayout.WEST);
+            add(title, BorderLayout.CENTER);
+        }
+
+        @Override
+        public Component getListCellRendererComponent(JList<? extends ChatRoom> list, ChatRoom value, int index, boolean isSelected, boolean cellHasFocus) {
+            String name = value != null ? value.getName() : "";
+            
+            // DM-userId1-userId2 형식에서 상대방 ID 추출
+            if (name.startsWith("DM-") && Application.me != null) {
+                String[] parts = name.substring(3).split("-");
+                String otherUserId = "";
+                
+                if (parts.length == 2) {
+                    otherUserId = parts[0].equals(Application.me.getId()) ? parts[1] : parts[0];
+                }
+                
+                // 상대방의 닉네임 찾기
+                String displayName = otherUserId;
+                for (domain.User u : Application.users) {
+                    if (u.getId().equals(otherUserId)) {
+                        displayName = u.getNickName() != null && !u.getNickName().isEmpty() 
+                                    ? u.getNickName() : otherUserId;
+                        break;
+                    }
+                }
+                
+                // 친구 목록에서도 확인
+                if (displayName.equals(otherUserId)) {
+                    for (domain.User u : Application.friends) {
+                        if (u.getId().equals(otherUserId)) {
+                            displayName = u.getNickName() != null && !u.getNickName().isEmpty() 
+                                        ? u.getNickName() : otherUserId;
+                            break;
+                        }
+                    }
+                }
+                
+                title.setText(displayName);
+                avatar.setText(displayName.isEmpty() ? "?" : displayName.substring(0, 1));
+            } else {
+                title.setText(name);
+                avatar.setText(name.isEmpty() ? "?" : name.substring(0, 1));
+            }
+
+            if (isSelected) {
+                setBackground(new Color(235, 245, 255));
             } else {
                 setBackground(Color.WHITE);
             }
