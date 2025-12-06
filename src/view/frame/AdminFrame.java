@@ -10,7 +10,9 @@ import dto.request.AdminInitRequest;
 import dto.request.AdminMessageDeleteRequest;
 import dto.request.AdminMessageSearchRequest;
 import dto.request.AdminRoomDeleteRequest;
+import dto.request.AdminRoomMembersRequest;
 import dto.response.AdminMessageSearchResponse;
+import dto.response.AdminRoomMembersResponse;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -117,12 +119,16 @@ public class AdminFrame extends JFrame implements ActionListener {
 
         JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 8));
         JButton refreshBtn = new JButton("새로고침");
+        JButton membersBtn = new JButton("참여자 보기");
         JButton deleteBtn = new JButton("채팅방 삭제");
         refreshBtn.setActionCommand("refresh_rooms");
+        membersBtn.setActionCommand("view_members");
         deleteBtn.setActionCommand("delete_room");
         refreshBtn.addActionListener(this);
+        membersBtn.addActionListener(this);
         deleteBtn.addActionListener(this);
         controls.add(refreshBtn);
+        controls.add(membersBtn);
         controls.add(deleteBtn);
 
         panel.add(controls, BorderLayout.SOUTH);
@@ -162,6 +168,15 @@ public class AdminFrame extends JFrame implements ActionListener {
             case "refresh_users":
             case "refresh_rooms":
                 Application.sender.sendMessage(new AdminInitRequest());
+                break;
+            case "view_members":
+                int memberRow = roomTable.getSelectedRow();
+                if (memberRow >= 0) {
+                    String selectedRoom = roomModel.getValueAt(memberRow, 0).toString();
+                    Application.sender.sendMessage(new AdminRoomMembersRequest(selectedRoom));
+                } else {
+                    showWarning("먼저 채팅방을 선택하세요.");
+                }
                 break;
             case "edit_user":
                 int editRow = userTable.getSelectedRow();
@@ -388,6 +403,56 @@ public class AdminFrame extends JFrame implements ActionListener {
             for (AdminMessageSearchResponse.AdminMessage m : messages) {
                 messageModel.addRow(new Object[]{m.id, m.roomName, m.nickname, m.content, m.sentAt});
             }
+        });
+    }
+
+    public void showRoomMembers(String roomName, List<AdminRoomMembersResponse.Member> members) {
+        SwingUtilities.invokeLater(() -> {
+            DefaultTableModel model = new DefaultTableModel(new Object[]{"아이디", "닉네임", "접속중"}, 0) {
+                @Override
+                public boolean isCellEditable(int row, int column) { return false; }
+
+                @Override
+                public Class<?> getColumnClass(int columnIndex) {
+                    return columnIndex == 2 ? Boolean.class : String.class;
+                }
+            };
+
+            for (AdminRoomMembersResponse.Member m : members) {
+                model.addRow(new Object[]{m.id, m.nickname, m.online});
+            }
+
+            JTable table = new JTable(model);
+            table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+            JScrollPane scroll = new JScrollPane(table);
+            scroll.setPreferredSize(new Dimension(380, 260));
+
+            JButton forceExitBtn = new JButton("강제 퇴장");
+            forceExitBtn.addActionListener(ev -> {
+                int row = table.getSelectedRow();
+                if (row < 0) {
+                    showWarning("먼저 사용자를 선택하세요.");
+                    return;
+                }
+                String userId = model.getValueAt(row, 0).toString();
+                int confirm = JOptionPane.showConfirmDialog(this,
+                        "사용자 " + userId + " 를 \"" + roomName + "\" 에서 퇴장시키겠습니까?",
+                        "확인", JOptionPane.YES_NO_OPTION);
+                if (confirm == JOptionPane.YES_OPTION) {
+                    Application.sender.sendMessage(new AdminForceExitRequest(userId, roomName));
+                }
+            });
+
+            JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+            btnPanel.add(forceExitBtn);
+
+            JDialog dialog = new JDialog(this, "채팅방 참여자 - " + roomName, true);
+            dialog.setLayout(new BorderLayout(10, 10));
+            dialog.add(scroll, BorderLayout.CENTER);
+            dialog.add(btnPanel, BorderLayout.SOUTH);
+            dialog.pack();
+            dialog.setLocationRelativeTo(this);
+            dialog.setVisible(true);
         });
     }
 }

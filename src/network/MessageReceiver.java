@@ -190,6 +190,13 @@ public class MessageReceiver extends Thread {
                 }
                 break;
 
+            case ADMIN_ROOM_MEMBERS_RESULT:
+                AdminRoomMembersResponse membersRes = new AdminRoomMembersResponse(message);
+                if (Application.adminFrame != null) {
+                    Application.adminFrame.showRoomMembers(membersRes.getRoomName(), membersRes.getMembers());
+                }
+                break;
+
             case ADMIN_ACTION_RESULT:
                 AdminActionResultResponse adminAction = new AdminActionResultResponse(message);
                 SwingUtilities.invokeLater(() ->
