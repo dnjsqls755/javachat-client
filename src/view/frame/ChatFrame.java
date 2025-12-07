@@ -22,7 +22,7 @@ public class ChatFrame extends JFrame implements WindowListener {
         super(chatRoomName);
 
         setLayout(null);
-        setSize(830, 550);
+        setSize(830, 600);
 
         this.chatRoomName = chatRoomName;
         chatPanel = new ChatPanel(this, chatRoomName);

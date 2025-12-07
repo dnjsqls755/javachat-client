@@ -25,6 +25,17 @@ public class ChatPanel extends JPanel implements ActionListener {
     JComboBox<String> whisperCombo = new JComboBox<>();
     DefaultComboBoxModel<String> whisperModel = new DefaultComboBoxModel<>();
 
+    // 검색 관련 컴포넌트
+    JTextField searchField = new JTextField(20);
+    JButton searchBtn = new JButton("검색");
+    JButton prevBtn = new JButton("<");
+    JButton nextBtn = new JButton(">");
+    JLabel searchResultLabel = new JLabel("");
+    private java.util.List<Integer> searchPositions = new java.util.ArrayList<>();
+    private int currentSearchIndex = -1;
+    private String lastSearchKeyword = "";
+    private Highlighter highlighter;
+    private Highlighter.HighlightPainter searchPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.WHITE);
 
     // 카카오톡 스타일 색상
     private static final Color BACKGROUND_COLOR = new Color(178, 199, 217);  // 연한 파란색 배경
@@ -47,12 +58,52 @@ public class ChatPanel extends JPanel implements ActionListener {
         chatTextPane.setBackground(BACKGROUND_COLOR);
         chatTextPane.setFont(new Font("맑은 고딕", Font.PLAIN, 13));
         doc = chatTextPane.getStyledDocument();
+        highlighter = chatTextPane.getHighlighter();
         
         JScrollPane scrPane = new JScrollPane(chatTextPane);
-        scrPane.setBounds(10, 10, 380, 430);
+        scrPane.setBounds(10, 10, 380, 380);
         scrPane.setBorder(BorderFactory.createEmptyBorder());
         scrPane.getViewport().setBackground(BACKGROUND_COLOR);
         add(scrPane);
+
+        // 검색 패널
+        JPanel searchPanel = new JPanel();
+        searchPanel.setLayout(null);
+        searchPanel.setBounds(10, 400, 380, 40);
+        searchPanel.setBackground(new Color(240, 240, 240));
+        searchPanel.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+        
+        searchField.setBounds(5, 5, 150, 30);
+        searchField.setFont(new Font("맑은 고딕", Font.PLAIN, 12));
+        searchPanel.add(searchField);
+        
+        searchBtn.setBounds(160, 5, 60, 30);
+        searchBtn.setFont(new Font("맑은 고딕", Font.PLAIN, 11));
+        searchBtn.setBackground(new Color(100, 150, 255));
+        searchBtn.setForeground(Color.WHITE);
+        searchBtn.setBorderPainted(false);
+        searchBtn.setFocusPainted(false);
+        searchBtn.addActionListener(e -> performSearch());
+        searchPanel.add(searchBtn);
+        
+        prevBtn.setBounds(225, 5, 40, 30);
+        prevBtn.setFont(new Font("맑은 고딕", Font.PLAIN, 11));
+        prevBtn.setEnabled(false);
+        prevBtn.addActionListener(e -> moveToPrevious());
+        searchPanel.add(prevBtn);
+        
+        nextBtn.setBounds(270, 5, 40, 30);
+        nextBtn.setFont(new Font("맑은 고딕", Font.PLAIN, 11));
+        nextBtn.setEnabled(false);
+        nextBtn.addActionListener(e -> moveToNext());
+        searchPanel.add(nextBtn);
+        
+        searchResultLabel.setBounds(315, 5, 60, 30);
+        searchResultLabel.setFont(new Font("맑은 고딕", Font.PLAIN, 10));
+        searchResultLabel.setForeground(new Color(80, 80, 80));
+        searchPanel.add(searchResultLabel);
+        
+        add(searchPanel);
 
 
         // 귓속말 콤보박스
@@ -92,7 +143,7 @@ public class ChatPanel extends JPanel implements ActionListener {
         add(sendBtn);
 
         frame.add(this);
-        setBounds(10, 10, 400, 500);
+        setBounds(10, 10, 400, 550);
     }
 
     public void addMessage(MessageType messageType, String userName, String message) {
@@ -290,7 +341,85 @@ public class ChatPanel extends JPanel implements ActionListener {
         dialog.setLocationRelativeTo(this);
         dialog.setVisible(true);
     }
-    
+
+    // 검색 기능
+    private void performSearch() {
+        String keyword = searchField.getText().trim();
+        if (keyword.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "검색어를 입력하세요.", "알림", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // 이전 하이라이트 제거
+        highlighter.removeAllHighlights();
+        searchPositions.clear();
+        currentSearchIndex = -1;
+
+        try {
+            String text = doc.getText(0, doc.getLength());
+            int pos = 0;
+
+            // 모든 검색 위치 찾기
+            while ((pos = text.indexOf(keyword, pos)) >= 0) {
+                try {
+                    highlighter.addHighlight(pos, pos + keyword.length(), searchPainter);
+                    searchPositions.add(pos);
+                    pos += keyword.length();
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
+                }
+            }
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
+
+        lastSearchKeyword = keyword;
+
+        if (searchPositions.isEmpty()) {
+            searchResultLabel.setText("0/0");
+            prevBtn.setEnabled(false);
+            nextBtn.setEnabled(false);
+            JOptionPane.showMessageDialog(this, "'" + keyword + "'를 찾을 수 없습니다.", "검색 결과", JOptionPane.INFORMATION_MESSAGE);
+        } else {
+            currentSearchIndex = 0;
+            updateSearchNavigation();
+            scrollToPosition(searchPositions.get(0));
+        }
+    }
+
+    private void moveToNext() {
+        if (searchPositions.isEmpty()) return;
+        currentSearchIndex = (currentSearchIndex + 1) % searchPositions.size();
+        updateSearchNavigation();
+        scrollToPosition(searchPositions.get(currentSearchIndex));
+    }
+
+    private void moveToPrevious() {
+        if (searchPositions.isEmpty()) return;
+        currentSearchIndex = (currentSearchIndex - 1 + searchPositions.size()) % searchPositions.size();
+        updateSearchNavigation();
+        scrollToPosition(searchPositions.get(currentSearchIndex));
+    }
+
+    private void updateSearchNavigation() {
+        searchResultLabel.setText((currentSearchIndex + 1) + "/" + searchPositions.size());
+        prevBtn.setEnabled(searchPositions.size() > 1);
+        nextBtn.setEnabled(searchPositions.size() > 1);
+    }
+
+    private void scrollToPosition(int pos) {
+        try {
+            Rectangle rect = chatTextPane.modelToView(pos);
+            if (rect != null) {
+                // 검색 결과를 뷰포트 중앙에 배치하기 위해 위아래 여유 공간 추가
+                Rectangle viewRect = new Rectangle(rect.x, rect.y - 100, rect.width, rect.height + 200);
+                chatTextPane.scrollRectToVisible(viewRect);
+                chatTextPane.setCaretPosition(pos);
+            }
+        } catch (BadLocationException e) {
+            e.printStackTrace();
+        }
+    }
 
 }
 
