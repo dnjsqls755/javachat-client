@@ -368,7 +368,7 @@ public class FriendListPanel extends JPanel {
     private void openFriendProfileDialog(User friend) {
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "친구 프로필", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setLayout(new BorderLayout(10, 10));
-        dialog.setSize(320, 300);
+        dialog.setSize(380, 340);
         dialog.setLocationRelativeTo(this);
 
         JLabel avatar = new JLabel(friend.getNickName().isEmpty() ? "?" : friend.getNickName().substring(0, 1), SwingConstants.CENTER);
@@ -382,14 +382,22 @@ public class FriendListPanel extends JPanel {
         // 프로필 이미지 요청
         Application.sender.sendMessage(new dto.request.ProfileImageRequest(friend.getId()));
 
-        JPanel info = new JPanel(new GridLayout(2, 1, 5, 5));
-        info.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        JPanel info = new JPanel(new GridLayout(5, 1, 6, 8));
+        info.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
         JLabel nickLabel = new JLabel("닉네임: " + friend.getNickName());
         JLabel idLabel = new JLabel("아이디: " + friend.getId());
-        nickLabel.setFont(new Font("Malgun Gothic", Font.PLAIN, 14));
-        idLabel.setFont(new Font("Malgun Gothic", Font.PLAIN, 14));
+        JLabel nameLabel = new JLabel("이름: -");
+        JLabel genderLabel = new JLabel("성별: -");
+        JLabel birthLabel = new JLabel("생년월일: -");
+        for (JLabel l : new JLabel[]{nickLabel, idLabel, nameLabel, genderLabel, birthLabel}) {
+            l.setFont(new Font("Malgun Gothic", Font.PLAIN, 14));
+            l.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+        }
         info.add(nickLabel);
         info.add(idLabel);
+        info.add(nameLabel);
+        info.add(genderLabel);
+        info.add(birthLabel);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton chatButton = new JButton("1:1 채팅");
@@ -413,6 +421,9 @@ public class FriendListPanel extends JPanel {
         // 응답을 받을 수 있도록 임시 저장
         Application.currentProfileDialog = dialog;
         Application.currentProfileAvatar = avatar;
+        Application.currentProfileNameLabel = nameLabel;
+        Application.currentProfileGenderLabel = genderLabel;
+        Application.currentProfileBirthLabel = birthLabel;
         
         dialog.setVisible(true);
     }
@@ -434,7 +445,7 @@ public class FriendListPanel extends JPanel {
         // 프로필 이미지 섹션
         JPanel imagePanel = new JPanel(new BorderLayout(10, 0));
         JLabel avatar = new JLabel(Application.me.getNickName() == null || Application.me.getNickName().isEmpty() 
-                ? "?" : Application.me.getNickName().substring(0, 1), SwingConstants.CENTER);
+            ? "?" : Application.me.getNickName().substring(0, 1), SwingConstants.CENTER);
         avatar.setPreferredSize(new Dimension(100, 100));
         avatar.setOpaque(true);
         avatar.setBackground(new Color(180, 200, 230));
@@ -474,13 +485,19 @@ public class FriendListPanel extends JPanel {
         imagePanel.add(avatar, BorderLayout.CENTER);
         imagePanel.add(changeImageBtn, BorderLayout.SOUTH);
 
-        // 닉네임 수정 섹션
-        JPanel nicknamePanel = new JPanel(new BorderLayout(5, 5));
-        JLabel nicknameLabel = new JLabel("닉네임:");
+        // 닉네임/기타 정보 섹션
+        JPanel nicknamePanel = new JPanel(new GridLayout(5, 1, 5, 5));
+        nicknamePanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));
         String currentNick = Application.me.getNickName() == null ? "" : Application.me.getNickName();
         JTextField nicknameField = new JTextField(currentNick, 20);
-        nicknamePanel.add(nicknameLabel, BorderLayout.WEST);
-        nicknamePanel.add(nicknameField, BorderLayout.CENTER);
+        JLabel nameLabel = new JLabel("이름: -");
+        JLabel genderLabel = new JLabel("성별: -");
+        JLabel birthLabel = new JLabel("생년월일: -");
+        nicknamePanel.add(new JLabel("닉네임:"));
+        nicknamePanel.add(nicknameField);
+        nicknamePanel.add(nameLabel);
+        nicknamePanel.add(genderLabel);
+        nicknamePanel.add(birthLabel);
 
         // 버튼 패널
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
@@ -505,6 +522,14 @@ public class FriendListPanel extends JPanel {
         contentPanel.add(imagePanel, BorderLayout.NORTH);
         contentPanel.add(nicknamePanel, BorderLayout.CENTER);
         contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        // 서버에 내 프로필 요청 (이름/성별/생일/이미지 갱신)
+        Application.currentProfileDialog = dialog;
+        Application.currentProfileAvatar = avatar;
+        Application.currentProfileNameLabel = nameLabel;
+        Application.currentProfileGenderLabel = genderLabel;
+        Application.currentProfileBirthLabel = birthLabel;
+        Application.sender.sendMessage(new dto.request.ProfileImageRequest(Application.me.getId()));
 
         dialog.add(contentPanel);
         dialog.setVisible(true);

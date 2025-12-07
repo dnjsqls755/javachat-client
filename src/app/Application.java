@@ -46,6 +46,9 @@ public class Application {
     // 프로필 이미지 표시용 임시 참조
     public static javax.swing.JDialog currentProfileDialog;
     public static javax.swing.JLabel currentProfileAvatar;
+    public static javax.swing.JLabel currentProfileNameLabel;
+    public static javax.swing.JLabel currentProfileGenderLabel;
+    public static javax.swing.JLabel currentProfileBirthLabel;
 
     public static final String LOBBY_CHAT_NAME = "Lobby";
 

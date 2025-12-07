@@ -604,6 +604,17 @@ public class MessageReceiver extends Thread {
                     } else {
                         System.out.println("[PROFILE_IMAGE_RESULT] 기본 프로필 이미지 (DEFAULT)");
                     }
+
+                    // 추가 프로필 정보 표시
+                    if (Application.currentProfileNameLabel != null) {
+                        Application.currentProfileNameLabel.setText("이름: " + (profileImgRes.getName().isEmpty() ? "-" : profileImgRes.getName()));
+                    }
+                    if (Application.currentProfileGenderLabel != null) {
+                        Application.currentProfileGenderLabel.setText("성별: " + (profileImgRes.getGender().isEmpty() ? "-" : profileImgRes.getGender()));
+                    }
+                    if (Application.currentProfileBirthLabel != null) {
+                        Application.currentProfileBirthLabel.setText("생년월일: " + (profileImgRes.getBirthDate().isEmpty() ? "-" : profileImgRes.getBirthDate()));
+                    }
                 }
                 break;
 

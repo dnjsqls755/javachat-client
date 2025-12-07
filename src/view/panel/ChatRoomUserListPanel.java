@@ -127,7 +127,7 @@ public class ChatRoomUserListPanel extends JPanel {
     private void openUserProfileDialog(User user) {
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "프로필", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setLayout(new BorderLayout(10, 10));
-        dialog.setSize(320, 300);
+        dialog.setSize(380, 320);
         dialog.setLocationRelativeTo(this);
 
         JLabel avatar = new JLabel(user.getNickName() == null || user.getNickName().isEmpty() ? "?" : user.getNickName().substring(0, 1), SwingConstants.CENTER);
@@ -143,10 +143,25 @@ public class ChatRoomUserListPanel extends JPanel {
         Application.currentProfileAvatar = avatar;
         Application.sender.sendMessage(new dto.request.ProfileImageRequest(user.getId()));
 
-        JPanel info = new JPanel(new GridLayout(2, 1, 5, 5));
-        info.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
-        info.add(new JLabel("닉네임: " + user.getNickName()));
-        info.add(new JLabel("아이디: " + user.getId()));
+        JPanel info = new JPanel(new GridLayout(5, 1, 6, 8));
+        info.setBorder(BorderFactory.createEmptyBorder(18, 18, 18, 18));
+        JLabel nickLabel = new JLabel("닉네임: " + user.getNickName());
+        JLabel idLabel = new JLabel("아이디: " + user.getId());
+        JLabel nameLabel = new JLabel("이름: -");
+        JLabel genderLabel = new JLabel("성별: -");
+        JLabel birthLabel = new JLabel("생년월일: -");
+        for (JLabel l : new JLabel[]{nickLabel, idLabel, nameLabel, genderLabel, birthLabel}) {
+            l.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 0));
+        }
+        info.add(nickLabel);
+        info.add(idLabel);
+        info.add(nameLabel);
+        info.add(genderLabel);
+        info.add(birthLabel);
+
+        Application.currentProfileNameLabel = nameLabel;
+        Application.currentProfileGenderLabel = genderLabel;
+        Application.currentProfileBirthLabel = birthLabel;
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton closeBtn = new JButton("닫기");
