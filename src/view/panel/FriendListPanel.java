@@ -368,20 +368,28 @@ public class FriendListPanel extends JPanel {
     private void openFriendProfileDialog(User friend) {
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "친구 프로필", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setLayout(new BorderLayout(10, 10));
-        dialog.setSize(300, 250);
+        dialog.setSize(320, 300);
         dialog.setLocationRelativeTo(this);
 
         JLabel avatar = new JLabel(friend.getNickName().isEmpty() ? "?" : friend.getNickName().substring(0, 1), SwingConstants.CENTER);
-        avatar.setPreferredSize(new Dimension(80, 80));
+        avatar.setPreferredSize(new Dimension(100, 100));
         avatar.setOpaque(true);
         avatar.setBackground(new Color(180, 200, 230));
         avatar.setForeground(Color.DARK_GRAY);
-        avatar.setFont(avatar.getFont().deriveFont(Font.BOLD, 28f));
-        avatar.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        avatar.setFont(avatar.getFont().deriveFont(Font.BOLD, 32f));
+        avatar.setBorder(BorderFactory.createLineBorder(new Color(160, 180, 210), 2));
 
-        JPanel info = new JPanel(new GridLayout(2, 1));
-        info.add(new JLabel("닉네임: " + friend.getNickName()));
-        info.add(new JLabel("아이디: " + friend.getId()));
+        // 프로필 이미지 요청
+        Application.sender.sendMessage(new dto.request.ProfileImageRequest(friend.getId()));
+
+        JPanel info = new JPanel(new GridLayout(2, 1, 5, 5));
+        info.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        JLabel nickLabel = new JLabel("닉네임: " + friend.getNickName());
+        JLabel idLabel = new JLabel("아이디: " + friend.getId());
+        nickLabel.setFont(new Font("Malgun Gothic", Font.PLAIN, 14));
+        idLabel.setFont(new Font("Malgun Gothic", Font.PLAIN, 14));
+        info.add(nickLabel);
+        info.add(idLabel);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton chatButton = new JButton("1:1 채팅");
@@ -398,9 +406,14 @@ public class FriendListPanel extends JPanel {
         actions.add(chatButton);
         actions.add(deleteButton);
 
-        dialog.add(avatar, BorderLayout.WEST);
+        dialog.add(avatar, BorderLayout.NORTH);
         dialog.add(info, BorderLayout.CENTER);
         dialog.add(actions, BorderLayout.SOUTH);
+        
+        // 응답을 받을 수 있도록 임시 저장
+        Application.currentProfileDialog = dialog;
+        Application.currentProfileAvatar = avatar;
+        
         dialog.setVisible(true);
     }
 
@@ -409,13 +422,87 @@ public class FriendListPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "로그인이 필요합니다.", "알림", JOptionPane.WARNING_MESSAGE);
             return;
         }
+
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "내 프로필 수정", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.setSize(350, 300);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+
+        // 프로필 이미지 섹션
+        JPanel imagePanel = new JPanel(new BorderLayout(10, 0));
+        JLabel avatar = new JLabel(Application.me.getNickName() == null || Application.me.getNickName().isEmpty() 
+                ? "?" : Application.me.getNickName().substring(0, 1), SwingConstants.CENTER);
+        avatar.setPreferredSize(new Dimension(100, 100));
+        avatar.setOpaque(true);
+        avatar.setBackground(new Color(180, 200, 230));
+        avatar.setForeground(Color.DARK_GRAY);
+        avatar.setFont(avatar.getFont().deriveFont(Font.BOLD, 32f));
+        avatar.setBorder(BorderFactory.createLineBorder(new Color(160, 180, 210), 2));
+
+        JButton changeImageBtn = new JButton("이미지 변경");
+        changeImageBtn.addActionListener(e -> {
+            JFileChooser chooser = new JFileChooser();
+            chooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("이미지 파일", "jpg", "jpeg", "png", "gif"));
+            if (chooser.showOpenDialog(dialog) == JFileChooser.APPROVE_OPTION) {
+                try {
+                    java.io.File file = chooser.getSelectedFile();
+                    byte[] imageBytes = java.nio.file.Files.readAllBytes(file.toPath());
+                    
+                    // 미리보기
+                    java.awt.image.BufferedImage img = javax.imageio.ImageIO.read(file);
+                    java.awt.Image scaledImg = img.getScaledInstance(100, 100, java.awt.Image.SCALE_SMOOTH);
+                    avatar.setIcon(new javax.swing.ImageIcon(scaledImg));
+                    avatar.setText("");
+                    
+                    // 서버로 전송
+                    Application.sender.sendMessage(new dto.request.ProfileImageUpdateRequest(Application.me.getId(), imageBytes));
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(dialog, "이미지 업로드 실패: " + ex.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        imagePanel.add(avatar, BorderLayout.CENTER);
+        imagePanel.add(changeImageBtn, BorderLayout.SOUTH);
+
+        // 닉네임 수정 섹션
+        JPanel nicknamePanel = new JPanel(new BorderLayout(5, 5));
+        JLabel nicknameLabel = new JLabel("닉네임:");
         String currentNick = Application.me.getNickName() == null ? "" : Application.me.getNickName();
-        String newNick = JOptionPane.showInputDialog(this, "새 닉네임을 입력하세요", currentNick);
-        if (newNick != null && !newNick.trim().isEmpty() && !newNick.equals(Application.me.getNickName())) {
-            Application.me.setNickName(newNick);
-            Application.sender.sendMessage(new ProfileUpdateRequest(Application.me.getId(), newNick));
-            updateMyProfileCard();
-        }
+        JTextField nicknameField = new JTextField(currentNick, 20);
+        nicknamePanel.add(nicknameLabel, BorderLayout.WEST);
+        nicknamePanel.add(nicknameField, BorderLayout.CENTER);
+
+        // 버튼 패널
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton saveBtn = new JButton("저장");
+        JButton cancelBtn = new JButton("취소");
+        
+        saveBtn.addActionListener(e -> {
+            String newNick = nicknameField.getText().trim();
+            if (!newNick.isEmpty() && !newNick.equals(Application.me.getNickName())) {
+                Application.me.setNickName(newNick);
+                Application.sender.sendMessage(new ProfileUpdateRequest(Application.me.getId(), newNick));
+                updateMyProfileCard();
+            }
+            dialog.dispose();
+        });
+        
+        cancelBtn.addActionListener(e -> dialog.dispose());
+        
+        buttonPanel.add(saveBtn);
+        buttonPanel.add(cancelBtn);
+
+        contentPanel.add(imagePanel, BorderLayout.NORTH);
+        contentPanel.add(nicknamePanel, BorderLayout.CENTER);
+        contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.add(contentPanel);
+        dialog.setVisible(true);
     }
 
     private String buildDirectChatRoomName(String userId, String friendId) {

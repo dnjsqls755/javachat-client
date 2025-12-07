@@ -583,6 +583,39 @@ public class MessageReceiver extends Thread {
                 }
                 break;
 
+            case PROFILE_IMAGE_RESULT:
+                dto.response.ProfileImageResponse profileImgRes = new dto.response.ProfileImageResponse(message);
+                if (Application.currentProfileAvatar != null && Application.currentProfileDialog != null) {
+                    if (profileImgRes.hasImage()) {
+                        try {
+                            java.awt.image.BufferedImage img = profileImgRes.getImage();
+                            if (img != null) {
+                                // 이미지를 100x100으로 스케일링
+                                java.awt.Image scaledImg = img.getScaledInstance(100, 100, java.awt.Image.SCALE_SMOOTH);
+                                Application.currentProfileAvatar.setIcon(new javax.swing.ImageIcon(scaledImg));
+                                Application.currentProfileAvatar.setText("");
+                                System.out.println("[PROFILE_IMAGE_RESULT] 프로필 이미지 표시됨");
+                            } else {
+                                System.out.println("[PROFILE_IMAGE_RESULT] Base64 디코딩 실패");
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    } else {
+                        System.out.println("[PROFILE_IMAGE_RESULT] 기본 프로필 이미지 (DEFAULT)");
+                    }
+                }
+                break;
+
+            case PROFILE_IMAGE_UPDATE_RESULT:
+                dto.response.ProfileImageUpdateResponse updateRes = new dto.response.ProfileImageUpdateResponse(message);
+                SwingUtilities.invokeLater(() -> 
+                    JOptionPane.showMessageDialog(null, updateRes.getMessage(), 
+                        updateRes.isSuccess() ? "성공" : "오류", 
+                        updateRes.isSuccess() ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE)
+                );
+                break;
+
             case MESSAGE_DELETE:
                 dto.response.MessageDeleteResponse deleteRes = new dto.response.MessageDeleteResponse(message);
                 ChatPanel deletePanel = Application.chatPanelMap.get(deleteRes.getChatRoomName());

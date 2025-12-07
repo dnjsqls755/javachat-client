@@ -3,7 +3,7 @@ package dto.request;
 import dto.type.DtoType;
 
 public abstract class DTO {
-    DtoType type;
+    protected DtoType type;
 
     public DTO(DtoType type) {
         this.type = type;

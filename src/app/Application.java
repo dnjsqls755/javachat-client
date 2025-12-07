@@ -43,6 +43,10 @@ public class Application {
     public static Map<String, ChatRoomUserListPanel> chatRoomUserListPanelMap = new HashMap<>();
     public static Map<String, ChatFrame> chatFrameMap = new HashMap<>();
 
+    // 프로필 이미지 표시용 임시 참조
+    public static javax.swing.JDialog currentProfileDialog;
+    public static javax.swing.JLabel currentProfileAvatar;
+
     public static final String LOBBY_CHAT_NAME = "Lobby";
 
     public Application() {
