@@ -8,6 +8,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class ChatRoomUserListPanel extends JPanel {
@@ -101,13 +103,60 @@ public class ChatRoomUserListPanel extends JPanel {
         labelPanel.removeAll();
 
         for (User user : chatUsers) {
-            labelPanel.add(new Label(user.getNickName()));
+            JLabel lbl = new JLabel(user.getNickName());
+            lbl.setOpaque(true);
+            lbl.setBackground(new Color(250, 250, 250));
+            lbl.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));
+            lbl.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    if (e.getClickCount() == 2) {
+                        openUserProfileDialog(user);
+                    }
+                }
+            });
+            labelPanel.add(lbl);
         }
 
         labelPanel.revalidate();
         labelPanel.repaint();
         revalidate();
         repaint();
+    }
+
+    private void openUserProfileDialog(User user) {
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "프로필", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setLayout(new BorderLayout(10, 10));
+        dialog.setSize(320, 300);
+        dialog.setLocationRelativeTo(this);
+
+        JLabel avatar = new JLabel(user.getNickName() == null || user.getNickName().isEmpty() ? "?" : user.getNickName().substring(0, 1), SwingConstants.CENTER);
+        avatar.setPreferredSize(new Dimension(100, 100));
+        avatar.setOpaque(true);
+        avatar.setBackground(new Color(180, 200, 230));
+        avatar.setForeground(Color.DARK_GRAY);
+        avatar.setFont(avatar.getFont().deriveFont(Font.BOLD, 32f));
+        avatar.setBorder(BorderFactory.createLineBorder(new Color(160, 180, 210), 2));
+
+        // 서버에 프로필 이미지 요청 (응답은 MessageReceiver에서 avatar에 세팅)
+        Application.currentProfileDialog = dialog;
+        Application.currentProfileAvatar = avatar;
+        Application.sender.sendMessage(new dto.request.ProfileImageRequest(user.getId()));
+
+        JPanel info = new JPanel(new GridLayout(2, 1, 5, 5));
+        info.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        info.add(new JLabel("닉네임: " + user.getNickName()));
+        info.add(new JLabel("아이디: " + user.getId()));
+
+        JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton closeBtn = new JButton("닫기");
+        closeBtn.addActionListener(e -> dialog.dispose());
+        actions.add(closeBtn);
+
+        dialog.add(avatar, BorderLayout.NORTH);
+        dialog.add(info, BorderLayout.CENTER);
+        dialog.add(actions, BorderLayout.SOUTH);
+        dialog.setVisible(true);
     }
 }
 

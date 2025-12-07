@@ -442,6 +442,11 @@ public class FriendListPanel extends JPanel {
         avatar.setFont(avatar.getFont().deriveFont(Font.BOLD, 32f));
         avatar.setBorder(BorderFactory.createLineBorder(new Color(160, 180, 210), 2));
 
+        // 내 프로필 이미지 요청 (기존 이미지 표시)
+        Application.currentProfileDialog = dialog;
+        Application.currentProfileAvatar = avatar;
+        Application.sender.sendMessage(new dto.request.ProfileImageRequest(Application.me.getId()));
+
         JButton changeImageBtn = new JButton("이미지 변경");
         changeImageBtn.addActionListener(e -> {
             JFileChooser chooser = new JFileChooser();
