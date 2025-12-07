@@ -4,6 +4,7 @@ import app.Application;
 import domain.ChatRoom;
 import dto.request.ChatRoomInviteAcceptRequest;
 import dto.request.EnterChatRequest;
+import dto.request.FileDownloadRequest;
 import dto.response.*;
 import dto.type.DtoType;
 import java.io.BufferedReader;
@@ -278,9 +279,26 @@ public class MessageReceiver extends Thread {
                 SwingUtilities.invokeLater(() -> {
                     ChatPanel historyPanel = Application.chatPanelMap.get(roomName);
                     if (historyPanel != null) {
+                        // 먼저 기존 메시지 초기화 (메시지 삭제 후 새로고침 때문)
+                        historyPanel.clearMessages();
+                        
                         // 패널이 이미 존재하면 바로 추가
                         for (ChatHistoryResponse.HistoryEntry entry : entries) {
-                            historyPanel.addHistoryMessage(entry.nickname, entry.content, entry.time);
+                            if ("IMAGE".equals(entry.messageType) || "FILE".equals(entry.messageType)) {
+                                // 파일 메시지: 메타 정보 저장 후 즉시 이미지 다운로드 요청
+                                historyPanel.addFileMessage(
+                                    entry.messageId, entry.nickname, entry.fileName,
+                                    entry.mimeType, entry.fileSize, entry.time
+                                );
+                                if (entry.mimeType != null && entry.mimeType.startsWith("image/")) {
+                                    Application.sender.sendMessage(new dto.request.FileDownloadRequest(
+                                        entry.messageId, roomName
+                                    ));
+                                }
+                            } else {
+                                // 텍스트 메시지
+                                historyPanel.addHistoryMessage(entry.nickname, entry.content, entry.time);
+                            }
                         }
                         System.out.println("[CHAT_HISTORY] 이전 대화 로드 완료: " + roomName + " (" + entries.size() + "개)");
                     } else {
@@ -295,7 +313,19 @@ public class MessageReceiver extends Thread {
                         ChatPanel createdPanel = Application.chatPanelMap.get(roomName);
                         if (createdPanel != null) {
                             for (ChatHistoryResponse.HistoryEntry entry : entries) {
-                                createdPanel.addHistoryMessage(entry.nickname, entry.content, entry.time);
+                                if ("IMAGE".equals(entry.messageType) || "FILE".equals(entry.messageType)) {
+                                    createdPanel.addFileMessage(
+                                        entry.messageId, entry.nickname, entry.fileName,
+                                        entry.mimeType, entry.fileSize, entry.time
+                                    );
+                                    if (entry.mimeType != null && entry.mimeType.startsWith("image/")) {
+                                        Application.sender.sendMessage(new dto.request.FileDownloadRequest(
+                                            entry.messageId, roomName
+                                        ));
+                                    }
+                                } else {
+                                    createdPanel.addHistoryMessage(entry.nickname, entry.content, entry.time);
+                                }
                             }
                             System.out.println("[CHAT_HISTORY] 자동 생성 후 로드 완료: " + roomName + " (" + entries.size() + "개)");
                         } else {
@@ -509,6 +539,59 @@ public class MessageReceiver extends Thread {
                         System.out.println("[CHAT_ROOM_INVITE_DECLINE] 초대 거절 - 방: " + inviteResponse.getRoomName());
                     }
                 });
+                break;
+
+            case FILE_UPLOAD_RESULT:
+                dto.response.FileUploadResponse uploadRes = new dto.response.FileUploadResponse(message);
+                if (uploadRes.isSuccess()) {
+                    System.out.println("[FILE_UPLOAD] 성공 - messageId: " + uploadRes.getMessageId());
+                } else {
+                    SwingUtilities.invokeLater(() -> 
+                        JOptionPane.showMessageDialog(null, uploadRes.getMessage(), "파일 업로드 오류", JOptionPane.ERROR_MESSAGE));
+                }
+                break;
+
+            case FILE_MESSAGE:
+                dto.response.FileMessageResponse fileMsg = new dto.response.FileMessageResponse(message);
+                ChatPanel fileChatPanel = Application.chatPanelMap.get(fileMsg.getChatRoomName());
+                if (fileChatPanel != null) {
+                    fileChatPanel.addFileMessage(
+                        fileMsg.getMessageId(),
+                        fileMsg.getSenderNickname(),
+                        fileMsg.getFileName(),
+                        fileMsg.getMimeType(),
+                        fileMsg.getFileSize(),
+                        fileMsg.getSentAt()
+                    );
+                    if (fileMsg.getMimeType() != null && fileMsg.getMimeType().startsWith("image/")) {
+                        Application.sender.sendMessage(new dto.request.FileDownloadRequest(
+                            fileMsg.getMessageId(),
+                            fileMsg.getChatRoomName()
+                        ));
+                    }
+                    System.out.println("[FILE_MESSAGE] 파일 메시지 수신 - " + fileMsg.getFileName());
+                } else {
+                    System.out.println("[WARNING] 채팅 패널을 찾을 수 없음: " + fileMsg.getChatRoomName());
+                }
+                break;
+
+            case FILE_DOWNLOAD_RESULT:
+                dto.response.FileDownloadResponse dlRes = new dto.response.FileDownloadResponse(message);
+                ChatPanel dlPanel = Application.chatPanelMap.get(dlRes.getChatRoomName());
+                if (dlPanel != null && dlRes.getMimeType() != null && dlRes.getMimeType().startsWith("image/")) {
+                    dlPanel.addImagePreview(dlRes.getMessageId(), dlRes.getFileData());
+                }
+                break;
+
+            case MESSAGE_DELETE:
+                dto.response.MessageDeleteResponse deleteRes = new dto.response.MessageDeleteResponse(message);
+                ChatPanel deletePanel = Application.chatPanelMap.get(deleteRes.getChatRoomName());
+                if (deletePanel != null) {
+                    deletePanel.removeMessage(deleteRes.getMessageId());
+                    System.out.println("[MESSAGE_DELETE] 메시지 삭제됨 - 방: " + deleteRes.getChatRoomName() + ", ID: " + deleteRes.getMessageId());
+                } else {
+                    System.out.println("[WARNING] 채팅 패널을 찾을 수 없음: " + deleteRes.getChatRoomName());
+                }
                 break;
 
             default:

@@ -355,7 +355,7 @@ public class JoinFrame extends JFrame implements ActionListener {
             }
         }
     }
-    
+
     private void performSignup() {
         // 필수 필드 검증
         String id = idField.getText().trim();
@@ -514,7 +514,7 @@ public class JoinFrame extends JFrame implements ActionListener {
         }
         return baos.toByteArray();
     }
-    
+
     // DatePicker용 포맷터
     private static class DateLabelFormatter extends JFormattedTextField.AbstractFormatter {
         private String datePattern = "yyyy-MM-dd";

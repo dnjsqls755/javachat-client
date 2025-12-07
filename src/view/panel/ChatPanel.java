@@ -9,9 +9,14 @@ import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import javax.imageio.ImageIO;
 
 public class ChatPanel extends JPanel implements ActionListener {
 
@@ -45,6 +50,28 @@ public class ChatPanel extends JPanel implements ActionListener {
     private static final Color WHISPER_COLOR = new Color(220, 240, 255); // 귓속말 배경
 
     private SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm");
+
+    // 파일 메시지 메타 저장 (다운로드 결과와 매칭용)
+    private final Map<Long, FileMeta> fileMetaMap = new HashMap<>();
+
+    private static class FileMeta {
+        final long messageId;
+        final String senderNickname;
+        final String fileName;
+        final String mimeType;
+        final long fileSize;
+        final String time;
+        int imageInsertPosition = -1;  // 이미지 삽입 위치 (나중에 정확한 위치에 이미지 추가)
+
+        FileMeta(long messageId, String senderNickname, String fileName, String mimeType, long fileSize, String time) {
+            this.messageId = messageId;
+            this.senderNickname = senderNickname;
+            this.fileName = fileName;
+            this.mimeType = mimeType;
+            this.fileSize = fileSize;
+            this.time = time;
+        }
+    }
 
     public ChatPanel(JFrame frame, String chatRoomName) {
         setLayout(null);
@@ -114,7 +141,7 @@ public class ChatPanel extends JPanel implements ActionListener {
         add(whisperCombo);
 
         // 메시지 입력 필드
-        msgTextF.setBounds(110, 450, 130, 40);
+        msgTextF.setBounds(110, 450, 90, 40);
         msgTextF.setFont(new Font("맑은 고딕", Font.PLAIN, 13));
         msgTextF.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
@@ -122,9 +149,19 @@ public class ChatPanel extends JPanel implements ActionListener {
         ));
         add(msgTextF);
 
+        // 파일 전송 버튼
+        JButton fileBtn = new JButton("📎");
+        fileBtn.setBounds(210, 450, 40, 40);
+        fileBtn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 20));
+        fileBtn.setBackground(Color.WHITE);
+        fileBtn.setBorderPainted(true);
+        fileBtn.setFocusPainted(false);
+        fileBtn.addActionListener(e -> showFileChooser());
+        add(fileBtn);
+
         // 이모티콘 버튼
         JButton emojiBtn = new JButton("😀");
-        emojiBtn.setBounds(250, 450, 40, 40);
+        emojiBtn.setBounds(255, 450, 40, 40);
         emojiBtn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
         emojiBtn.setBackground(Color.WHITE);
         emojiBtn.setBorderPainted(true);
@@ -152,6 +189,7 @@ public class ChatPanel extends JPanel implements ActionListener {
             switch (messageType) {
                 case ENTER:
                 case EXIT:
+                case SYSTEM:
                     addSystemMessage(message);
                     break;
                 case CHAT:
@@ -163,6 +201,17 @@ public class ChatPanel extends JPanel implements ActionListener {
             }
             chatTextPane.setCaretPosition(doc.getLength());
         } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 모든 메시지를 초기화하고 새로고침
+    public void clearMessages() {
+        try {
+            doc.remove(0, doc.getLength());
+            fileMetaMap.clear();
+            System.out.println("[ChatPanel] 메시지 목록 초기화");
+        } catch (BadLocationException e) {
             e.printStackTrace();
         }
     }
@@ -421,5 +470,237 @@ public class ChatPanel extends JPanel implements ActionListener {
         }
     }
 
+    private void showFileChooser() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("파일 선택");
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        
+        // 파일 크기 제한 (10MB)
+        final long MAX_FILE_SIZE = 10 * 1024 * 1024;
+        
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            java.io.File selectedFile = fileChooser.getSelectedFile();
+            
+            if (selectedFile.length() > MAX_FILE_SIZE) {
+                JOptionPane.showMessageDialog(this, "파일 크기는 10MB를 초과할 수 없습니다.", "오류", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            try {
+                byte[] fileData = java.nio.file.Files.readAllBytes(selectedFile.toPath());
+                String mimeType = java.nio.file.Files.probeContentType(selectedFile.toPath());
+                if (mimeType == null) {
+                    mimeType = "application/octet-stream";
+                }
+                
+                dto.request.FileUploadRequest uploadReq = new dto.request.FileUploadRequest(
+                    chatRoomName,
+                    Application.me.getId(),
+                    selectedFile.getName(),
+                    mimeType,
+                    selectedFile.length(),
+                    fileData
+                );
+                
+                // 파일 업로드 요청 전송
+                Application.sender.sendMessage(uploadReq);
+                
+                System.out.println("[파일 업로드] " + selectedFile.getName() + " (" + selectedFile.length() + " bytes)");
+                
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "파일 읽기 오류: " + ex.getMessage(), "오류", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    public void addFileMessage(long messageId, String senderNickname, String fileName, 
+                               String mimeType, long fileSize, String timeStamp) {
+        try {
+            boolean isMyMessage = Application.me != null && senderNickname.equals(Application.me.getNickName());
+            boolean isImage = mimeType != null && mimeType.startsWith("image/");
+
+            FileMeta meta = new FileMeta(messageId, senderNickname, fileName, mimeType, fileSize, timeStamp);
+            fileMetaMap.put(messageId, meta);
+            
+            SimpleAttributeSet nameAttrs = new SimpleAttributeSet();
+            SimpleAttributeSet msgAttrs = new SimpleAttributeSet();
+            
+            StyleConstants.setFontSize(nameAttrs, 11);
+            StyleConstants.setFontSize(msgAttrs, 12);
+            
+            doc.insertString(doc.getLength(), "\n", null);
+            
+            if (isMyMessage) {
+                StyleConstants.setAlignment(msgAttrs, StyleConstants.ALIGN_RIGHT);
+                StyleConstants.setBackground(msgAttrs, MY_MESSAGE_COLOR);
+                
+                int start = doc.getLength();
+                String fileInfo = (isImage ? "🖼️ " : "📎 ") + fileName;
+                doc.insertString(doc.getLength(), fileInfo + "\n", msgAttrs);
+                doc.setParagraphAttributes(start, fileInfo.length(), msgAttrs, false);
+                
+                // 이미지일 경우 삽입 위치 기록 (다음 문자 위치)
+                if (isImage) {
+                    meta.imageInsertPosition = doc.getLength();
+                }
+                
+            } else {
+                StyleConstants.setAlignment(msgAttrs, StyleConstants.ALIGN_LEFT);
+                StyleConstants.setForeground(nameAttrs, new Color(60, 60, 60));
+                StyleConstants.setBackground(msgAttrs, OTHER_MESSAGE_COLOR);
+                
+                int start = doc.getLength();
+                doc.insertString(doc.getLength(), senderNickname + "\n", nameAttrs);
+                
+                String fileInfo = (isImage ? "🖼️ " : "📎 ") + fileName;
+                doc.insertString(doc.getLength(), fileInfo + "\n", msgAttrs);
+                doc.setParagraphAttributes(start, doc.getLength() - start, msgAttrs, false);
+                
+                // 이미지일 경우 삽입 위치 기록 (다음 문자 위치)
+                if (isImage) {
+                    meta.imageInsertPosition = doc.getLength();
+                }
+            }
+            
+            chatTextPane.setCaretPosition(doc.getLength());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 이미지 파일 다운로드 결과를 UI에 렌더링 (정확한 위치에 삽입)
+    public void addImagePreview(long messageId, byte[] imageBytes) {
+        try {
+            FileMeta meta = fileMetaMap.get(messageId);
+            if (meta == null) {
+                return;
+            }
+
+            boolean isMyMessage = Application.me != null && meta.senderNickname.equals(Application.me.getNickName());
+
+            BufferedImage img = ImageIO.read(new java.io.ByteArrayInputStream(imageBytes));
+            if (img == null) {
+                return;
+            }
+
+            int maxWidth = 220;
+            int width = img.getWidth();
+            int height = img.getHeight();
+            if (width > maxWidth) {
+                double ratio = maxWidth / (double) width;
+                width = maxWidth;
+                height = (int) (height * ratio);
+            }
+
+            Image scaled = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+            ImageIcon icon = new ImageIcon(scaled);
+
+            SimpleAttributeSet imgAttrs = new SimpleAttributeSet();
+            StyleConstants.setAlignment(imgAttrs, isMyMessage ? StyleConstants.ALIGN_RIGHT : StyleConstants.ALIGN_LEFT);
+            if (isMyMessage) {
+                StyleConstants.setBackground(imgAttrs, MY_MESSAGE_COLOR);
+            } else {
+                StyleConstants.setBackground(imgAttrs, OTHER_MESSAGE_COLOR);
+            }
+
+            // 기록된 삽입 위치에 이미지 추가 (파일명 바로 다음에 정확히 삽입)
+            if (meta.imageInsertPosition >= 0 && meta.imageInsertPosition <= doc.getLength()) {
+                try {
+                    chatTextPane.setCaretPosition(meta.imageInsertPosition);
+                    chatTextPane.insertIcon(icon);
+                    doc.insertString(meta.imageInsertPosition + 1, "\n", null);
+                    doc.setParagraphAttributes(meta.imageInsertPosition, 1, imgAttrs, false);
+                } catch (Exception ex) {
+                    // 위치가 문제 있으면 끝에 추가
+                    int start = doc.getLength();
+                    chatTextPane.setCaretPosition(start);
+                    chatTextPane.insertIcon(icon);
+                    doc.insertString(doc.getLength(), "\n", null);
+                    doc.setParagraphAttributes(start, doc.getLength() - start, imgAttrs, false);
+                }
+            } else {
+                // 위치 정보가 없으면 끝에 추가
+                int start = doc.getLength();
+                chatTextPane.setCaretPosition(start);
+                chatTextPane.insertIcon(icon);
+                doc.insertString(doc.getLength(), "\n", null);
+                doc.setParagraphAttributes(start, doc.getLength() - start, imgAttrs, false);
+            }
+
+            chatTextPane.setCaretPosition(doc.getLength());
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String formatFileSize(long size) {
+        if (size < 1024) return size + " B";
+        if (size < 1024 * 1024) return String.format("%.1f KB", size / 1024.0);
+        return String.format("%.1f MB", size / (1024.0 * 1024.0));
+    }
+
+    // 메시지 ID로 메시지를 찾아서 제거
+    public void removeMessage(long messageId) {
+        try {
+            // 파일 메시지인 경우: fileMetaMap에서 찾기
+            FileMeta meta = fileMetaMap.get(messageId);
+            if (meta != null) {
+                // 파일명을 포함하는 라인 찾기
+                String fullText = doc.getText(0, doc.getLength());
+                String[] lines = fullText.split("\n", -1);
+                
+                int currentPos = 0;
+                int startRemove = -1;
+                int endRemove = -1;
+                
+                for (int i = 0; i < lines.length; i++) {
+                    String line = lines[i];
+                    int lineLength = line.length() + 1;
+                    
+                    if (line.contains(meta.fileName) && (line.contains("🖼️") || line.contains("📎"))) {
+                        startRemove = currentPos;
+                        
+                        // 발신자 이름이 있으면 그 줄도 제거
+                        if (i > 0 && lines[i-1].equals(meta.senderNickname)) {
+                            startRemove = currentPos - (lines[i-1].length() + 1);
+                        }
+                        
+                        // 파일 메시지 라인 제거
+                        endRemove = currentPos + lineLength;
+                        
+                        // 이미지가 있으면 다음 라인도 포함
+                        if (i + 1 < lines.length && lines[i+1].length() > 0) {
+                            endRemove += lines[i+1].length() + 1;
+                        }
+                        
+                        // 앞의 빈 줄 제거
+                        if (startRemove > 0 && startRemove <= fullText.length() && fullText.charAt(startRemove - 1) == '\n') {
+                            startRemove--;
+                        }
+                        
+                        break;
+                    }
+                    currentPos += lineLength;
+                }
+                
+                if (startRemove >= 0 && endRemove > startRemove && endRemove <= doc.getLength()) {
+                    doc.remove(startRemove, endRemove - startRemove);
+                    fileMetaMap.remove(messageId);
+                    System.out.println("[MESSAGE_DELETE] 파일 메시지 제거 - fileName: " + meta.fileName + ", messageId: " + messageId);
+                    return;
+                }
+            }
+            
+            System.out.println("[MESSAGE_DELETE] 메시지 ID " + messageId + " 처리 완료 (파일 메시지 아님)");
+            
+        } catch (Exception e) {
+            System.err.println("[MESSAGE_DELETE] 메시지 제거 중 오류: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
 }
+
 

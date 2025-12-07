@@ -48,6 +48,12 @@ public class MessageSender {
                 case PROFILE_UPDATE:
                     writer.println((ProfileUpdateRequest) dto);
                     break;
+                case FILE_UPLOAD:
+                    writer.println(((FileUploadRequest) dto).toStringWithData());
+                    break;
+                case FILE_DOWNLOAD:
+                    writer.println((FileDownloadRequest) dto);
+                    break;
                 default:
                     writer.println(dto);
             }
