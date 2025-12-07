@@ -448,7 +448,7 @@ public class JoinFrame extends JFrame implements ActionListener {
         
         // JoinRequest 생성
         JoinRequest request = new JoinRequest(
-            id, name, password, profileImg, "", 
+            id, name, password, profileImg,
             nickname, email, phone, address, detailAddress, 
             postalCode, gender, birthDate
         );
