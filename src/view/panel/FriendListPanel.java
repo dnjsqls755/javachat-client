@@ -436,7 +436,7 @@ public class FriendListPanel extends JPanel {
 
         JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "내 프로필 수정", Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setLayout(new BorderLayout(10, 10));
-        dialog.setSize(350, 300);
+        dialog.setSize(380, 400);
         dialog.setLocationRelativeTo(this);
 
         JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
