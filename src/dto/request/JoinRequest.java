@@ -59,7 +59,7 @@ public class JoinRequest extends DTO {
 
     @Override
     public String toString() {
-        return super.toString() + String.join(",", 
+        return super.toString() + String.join("|", 
             userId != null ? userId : "",
             name != null ? name : "",
             password != null ? password : "",
